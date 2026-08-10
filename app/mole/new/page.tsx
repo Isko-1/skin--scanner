@@ -26,7 +26,7 @@ export default function NewMolePage() {
 
     const { data, error } = await supabase
       .from("moles")
-      .insert({ label: label.trim(), body_location: bodyLocation.trim() || null, owner_id: user.id })
+      .insert({ label: label.trim(), body_location: bodyLocation.trim() || null, owner_id: user?.id })
       .select()
       .single();
 
