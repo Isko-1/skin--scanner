@@ -34,11 +34,17 @@ export async function classifyImage(imageUrl: string): Promise<Record<string, nu
   return probs;
 }
 
-// Model card label names vary ("mel", "malignant", "MEL") — normalize to what
-// the rest of the app expects (`risk_score` reads probs.malignant).
+// Model card label names vary by model — Anwarkh1/Skin_Cancer-Image_Classification
+// (the default HF_MODEL_ID) returns full class names like "melanoma" and
+// "basal cell carcinoma", not HAM10000-style abbreviations ("mel", "bcc").
+// Substring match instead of an exact-value list so it survives label
+// wording differences across models without silently mapping everything to benign.
+const MALIGNANT_TERMS = ["melanoma", "basal cell carcinoma", "actinic keratos", "malignant"];
+const BENIGN_TERMS = ["nevi", "benign", "vascular", "dermatofibroma", "keratosis-like"];
+
 function normalizeLabel(label: string): string {
   const l = label.toLowerCase();
-  if (["mel", "malignant", "melanoma", "bcc", "akiec"].includes(l)) return "malignant";
-  if (["nv", "benign", "bkl", "df", "vasc"].includes(l)) return "benign";
+  if (MALIGNANT_TERMS.some((t) => l.includes(t))) return "malignant";
+  if (BENIGN_TERMS.some((t) => l.includes(t))) return "benign";
   return l;
 }

@@ -1,4 +1,4 @@
-// File: C:\Users\Iskair\Downloads\skin-scanner\app\capture\page.tsx
+// File: C:\Users\Iskair\Desktop\Myproject\skin-scanner\app\capture\page.tsx
 import * as entry from '../../../../app/capture/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

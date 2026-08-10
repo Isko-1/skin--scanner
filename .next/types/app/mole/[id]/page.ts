@@ -1,4 +1,4 @@
-// File: C:\Users\Iskair\Downloads\skin-scanner\app\mole\[id]\page.tsx
+// File: C:\Users\Iskair\Desktop\Myproject\skin-scanner\app\mole\[id]\page.tsx
 import * as entry from '../../../../../app/mole/[id]/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

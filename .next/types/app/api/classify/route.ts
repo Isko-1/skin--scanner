@@ -1,4 +1,4 @@
-// File: C:\Users\Iskair\Downloads\skin-scanner\app\api\classify\route.ts
+// File: C:\Users\Iskair\Desktop\Myproject\skin-scanner\app\api\classify\route.ts
 import * as entry from '../../../../../app/api/classify/route.js'
 import type { NextRequest } from 'next/server.js'
 
