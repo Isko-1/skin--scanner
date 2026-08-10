@@ -55,7 +55,7 @@ function LoginForm() {
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-4 bg-[var(--color-background)] px-4 py-6 text-[var(--color-foreground)]">
       <div className="mb-2">
         <h1 className="text-lg font-semibold">Вход</h1>
-        <p className="text-sm text-slate-500">Войдите, чтобы видеть свои родинки и статистику.</p>
+        <p className="text-sm text-[var(--color-muted-foreground)]">Войдите, чтобы видеть свои родинки и статистику.</p>
       </div>
 
       <form onSubmit={submit} className="flex flex-col gap-4">
@@ -67,7 +67,7 @@ function LoginForm() {
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="min-h-11 rounded-lg border border-[var(--color-border)] bg-white px-3 text-base"
+            className="min-h-11 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] px-3 text-base focus:outline-none focus:ring-2 focus:ring-[var(--color-ring)]/40"
           />
         </label>
 
@@ -79,7 +79,7 @@ function LoginForm() {
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="min-h-11 rounded-lg border border-[var(--color-border)] bg-white px-3 text-base"
+            className="min-h-11 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] px-3 text-base focus:outline-none focus:ring-2 focus:ring-[var(--color-ring)]/40"
           />
         </label>
 
@@ -88,13 +88,13 @@ function LoginForm() {
         <button
           type="submit"
           disabled={loading || !email.trim() || !password}
-          className="min-h-11 rounded-lg bg-[var(--color-accent)] px-5 text-sm font-medium text-white transition active:scale-95 disabled:opacity-40"
+          className="min-h-11 rounded-xl bg-[var(--color-accent)] px-5 text-sm font-medium text-white shadow-sm transition hover:brightness-110 active:scale-95 disabled:opacity-40"
         >
           {loading ? "Входим…" : "Войти"}
         </button>
       </form>
 
-      <div className="flex items-center gap-3 text-xs text-slate-400">
+      <div className="flex items-center gap-3 text-xs text-[var(--color-muted-foreground)]">
         <div className="h-px flex-1 bg-[var(--color-border)]" />
         или
         <div className="h-px flex-1 bg-[var(--color-border)]" />
@@ -104,7 +104,7 @@ function LoginForm() {
         type="button"
         onClick={submitGoogle}
         disabled={googleLoading}
-        className="flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] bg-white px-5 text-sm font-medium text-[var(--color-foreground)] transition active:scale-95 disabled:opacity-40"
+        className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] px-5 text-sm font-medium text-[var(--color-foreground)] transition hover:bg-[var(--color-muted)] active:scale-95 disabled:opacity-40"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
           <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47a5.54 5.54 0 0 1-2.4 3.63v3h3.88c2.27-2.09 3.57-5.17 3.57-8.82Z" />
@@ -115,7 +115,7 @@ function LoginForm() {
         {googleLoading ? "Перенаправляем…" : "Продолжить через Google"}
       </button>
 
-      <p className="text-center text-sm text-slate-500">
+      <p className="text-center text-sm text-[var(--color-muted-foreground)]">
         Нет аккаунта?{" "}
         <Link href="/register" className="font-medium text-[var(--color-accent)] underline underline-offset-2">
           Зарегистрироваться

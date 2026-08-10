@@ -2,47 +2,125 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { scoreCanvasSharpness } from "@/lib/sharpness";
 
 const supabase = createClient();
 
 const SHARPNESS_MIN = 60; // recalibrate against real test shots — see lib/sharpness.ts
+const CLASSIFY_TIMEOUT_MS = 30_000;
 
 type Phase = "camera" | "review" | "uploading" | "error";
+type UploadStage = "photo" | "analysis" | null;
+// Which retry path applies: "camera" retries the permission prompt,
+// "submit" retries upload()/classify (photo is already in canvas),
+// "missing-data" means there's nothing to retry — send the person home.
+type ErrorStage = "camera" | "submit" | "missing-data" | null;
 
-export default function CapturePage({ searchParams }: { searchParams: { mole_id?: string } }) {
-  const moleId = searchParams.mole_id;
+type CaptureSearchParams = {
+  mole_id?: string; // existing mole — "Новый скан" from its history page, or resuming an unfinished one
+  label?: string; // brand-new mole — from /mole/new, not saved to the DB yet
+  body_location?: string;
+};
+
+export default function CapturePage({ searchParams }: { searchParams: CaptureSearchParams }) {
+  const { label, body_location: bodyLocation } = searchParams;
   const router = useRouter();
+
+  // Starts as the existing mole's id when we have one; stays null for a
+  // brand-new mole until upload() actually creates the row.
+  const [moleId, setMoleId] = useState<string | null>(searchParams.mole_id ?? null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null); // holds the captured frame
   const streamRef = useRef<MediaStream | null>(null);
+  const mountedRef = useRef(true);
 
   const [phase, setPhase] = useState<Phase>("camera");
   const [sharpness, setSharpness] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorStage, setErrorStage] = useState<ErrorStage>(null);
   const [cameraReady, setCameraReady] = useState(false);
   const [flash, setFlash] = useState(false);
+  const [uploadStage, setUploadStage] = useState<UploadStage>(null);
+  // Set once storage upload succeeds, so a retry after a classify failure
+  // resumes from "analyze" instead of re-uploading the same photo again.
+  const [uploadedPath, setUploadedPath] = useState<string | null>(null);
+
+  async function requestCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment", width: { ideal: 1280 } },
+      });
+      if (!mountedRef.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
+      streamRef.current = stream;
+      if (videoRef.current) videoRef.current.srcObject = stream;
+      setErrorMsg(null);
+      setErrorStage(null);
+      setPhase("camera");
+    } catch {
+      if (!mountedRef.current) return;
+      setErrorMsg("Не удалось получить доступ к камере. Разрешите доступ и попробуйте снова.");
+      setErrorStage("camera");
+      setPhase("error");
+    }
+  }
 
   useEffect(() => {
-    let cancelled = false;
-    navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: "environment", width: { ideal: 1280 } } })
-      .then((stream) => {
-        if (cancelled) return stream.getTracks().forEach((t) => t.stop());
-        streamRef.current = stream;
-        if (videoRef.current) videoRef.current.srcObject = stream;
-      })
-      .catch(() => {
-        setErrorMsg("Не удалось получить доступ к камере. Разрешите доступ и обновите страницу.");
-        setPhase("error");
-      });
+    mountedRef.current = true;
+    if (!moleId && !label) {
+      // Nothing to shoot for — don't even prompt for the camera.
+      setErrorMsg("Нет данных о родинке — начните снова с «+ Добавить».");
+      setErrorStage("missing-data");
+      setPhase("error");
+      return;
+    }
+    requestCamera();
     return () => {
-      cancelled = true;
+      mountedRef.current = false;
       streamRef.current?.getTracks().forEach((t) => t.stop());
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Guards against losing an already-captured, not-yet-sent photo: the
+  // in-app back arrow is handled directly in its onClick, but people also
+  // swipe-back / use the phone's physical back button, which fires
+  // popstate instead. Pushing a extra history entry while on "review" lets
+  // us intercept that and ask before actually leaving.
+  useEffect(() => {
+    if (phase !== "review") return;
+    window.history.pushState({ captureGuard: true }, "");
+    function onPopState() {
+      if (window.confirm("Кадр ещё не отправлен. Уйти и потерять снимок?")) {
+        router.back();
+      } else {
+        window.history.pushState({ captureGuard: true }, "");
+      }
+    }
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [phase, router]);
+
+  // Same guard for closing the tab / refreshing while a shot is waiting to be sent.
+  useEffect(() => {
+    if (phase !== "review") return;
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [phase]);
+
+  function goBack() {
+    if (phase === "review" && !window.confirm("Кадр ещё не отправлен. Уйти и потерять снимок?")) return;
+    router.back();
+  }
 
   function capture() {
     const video = videoRef.current;
@@ -65,19 +143,22 @@ export default function CapturePage({ searchParams }: { searchParams: { mole_id?
 
   function retake() {
     setSharpness(null);
+    setUploadedPath(null);
     setPhase("camera");
   }
 
   async function upload() {
-    if (!moleId) {
-      setErrorMsg("Нет mole_id — открой захват со страницы конкретной родинки.");
+    if (!moleId && !label) {
+      setErrorMsg("Нет данных о родинке — начните снова с «+ Добавить».");
+      setErrorStage("missing-data");
       setPhase("error");
       return;
     }
-    const canvas = canvasRef.current!;
-    setPhase("uploading");
 
-    const blob: Blob = await new Promise((res) => canvas.toBlob((b) => res(b!), "image/jpeg", 0.92));
+    setErrorMsg(null);
+    setErrorStage(null);
+    setPhase("uploading");
+    setUploadStage("photo");
 
     // middleware.ts already guarantees a logged-in user reached this page,
     // so we just read the session instead of the old anonymous-only
@@ -87,30 +168,86 @@ export default function CapturePage({ searchParams }: { searchParams: { mole_id?
     } = await supabase.auth.getUser();
     if (!user) {
       setErrorMsg("Сессия истекла. Войдите заново и повторите попытку.");
-      setPhase("error");
-      return;
-    }
-    const path = `${user.id}/${moleId}/${Date.now()}.jpg`;
-
-    const { error: uploadError } = await supabase.storage.from("mole-photos").upload(path, blob);
-    if (uploadError) {
-      setErrorMsg(uploadError.message);
+      setErrorStage("submit");
       setPhase("error");
       return;
     }
 
-    const res = await fetch("/api/classify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mole_id: moleId, image_path: path, sharpness_score: sharpness }),
-    });
+    // First scan for a brand-new mole: create the row now, only now that
+    // there's an actual photo to attach to it. If this fails, nothing has
+    // been written and the person is still on /mole/new's data — no
+    // orphaned mole either way. moleId is cached in state so a retry after
+    // a later failure (e.g. classify) reuses the same row instead of
+    // creating a duplicate.
+    let currentMoleId = moleId;
+    if (!currentMoleId) {
+      const { data: newMole, error: moleError } = await supabase
+        .from("moles")
+        .insert({ label, body_location: bodyLocation || null, owner_id: user.id })
+        .select()
+        .single();
+      if (moleError) {
+        setErrorMsg(moleError.message);
+        setErrorStage("submit");
+        setPhase("error");
+        return;
+      }
+      currentMoleId = newMole.id;
+      setMoleId(newMole.id);
+    }
+
+    // Skip re-uploading if a previous attempt already got the photo into
+    // storage and only classify failed — retry should resume, not redo.
+    let path = uploadedPath;
+    if (!path) {
+      const canvas = canvasRef.current!;
+      const blob: Blob = await new Promise((res) => canvas.toBlob((b) => res(b!), "image/jpeg", 0.92));
+      path = `${user.id}/${currentMoleId}/${Date.now()}.jpg`;
+
+      const { error: uploadError } = await supabase.storage.from("mole-photos").upload(path, blob);
+      if (uploadError) {
+        setErrorMsg(uploadError.message);
+        setErrorStage("submit");
+        setPhase("error");
+        return;
+      }
+      setUploadedPath(path);
+    }
+
+    setUploadStage("analysis");
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), CLASSIFY_TIMEOUT_MS);
+
+    let res: Response;
+    try {
+      res = await fetch("/api/classify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mole_id: currentMoleId, image_path: path, sharpness_score: sharpness }),
+        signal: controller.signal,
+      });
+    } catch (e) {
+      const timedOut = (e as Error).name === "AbortError";
+      setErrorMsg(
+        timedOut
+          ? "Анализ занимает необычно долго. Проверьте соединение и попробуйте снова."
+          : "Не удалось связаться с сервером. Проверьте соединение и попробуйте снова."
+      );
+      setErrorStage("submit");
+      setPhase("error");
+      return;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
     if (!res.ok) {
       setErrorMsg((await res.json()).error ?? "Классификация не удалась.");
+      setErrorStage("submit");
       setPhase("error");
       return;
     }
 
-    router.push(`/mole/${moleId}`);
+    router.push(`/mole/${currentMoleId}`);
   }
 
   const isBlurry = sharpness !== null && sharpness < SHARPNESS_MIN;
@@ -127,7 +264,7 @@ export default function CapturePage({ searchParams }: { searchParams: { mole_id?
     <main className="mx-auto flex h-dvh max-w-md flex-col overflow-hidden bg-neutral-950 text-neutral-100">
       <header className="flex items-center gap-3 border-b border-neutral-800/80 bg-neutral-950/80 px-4 py-3 backdrop-blur">
         <button
-          onClick={() => router.back()}
+          onClick={goBack}
           aria-label="Назад"
           className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-800 hover:text-neutral-100"
         >
@@ -135,7 +272,10 @@ export default function CapturePage({ searchParams }: { searchParams: { mole_id?
             <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-        <h1 className="text-sm font-medium tracking-wide text-neutral-400">СЪЁМКА РОДИНКИ</h1>
+        <h1 className="flex-1 text-sm font-medium tracking-wide text-neutral-400">
+          СЪЁМКА РОДИНКИ
+          {label && <span className="ml-2 normal-case text-neutral-300">· {label}</span>}
+        </h1>
       </header>
 
       <div className="relative flex-1 overflow-hidden bg-black">
@@ -233,16 +373,47 @@ export default function CapturePage({ searchParams }: { searchParams: { mole_id?
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
             </svg>
-            <p className="text-sm text-neutral-400">Загрузка и анализ… обычно 5–20 сек</p>
+            <p className="text-sm text-neutral-400">
+              {uploadStage === "photo" ? "Загружаем фото…" : "Анализируем снимок… обычно 5–20 сек"}
+            </p>
           </div>
         )}
 
         {phase === "error" && (
           <div className="text-center text-sm text-red-400">
             {errorMsg}
-            <button onClick={() => setPhase("camera")} className="mt-2 block underline">
-              Попробовать снова
-            </button>
+
+            {errorStage === "camera" && (
+              <button
+                onClick={requestCamera}
+                className="mt-3 min-h-11 rounded-lg bg-cyan-500 px-5 text-sm font-medium text-neutral-950 transition active:scale-95"
+              >
+                Разрешить доступ снова
+              </button>
+            )}
+
+            {errorStage === "submit" && (
+              <div className="mt-3 flex justify-center gap-3">
+                <button
+                  onClick={retake}
+                  className="min-h-11 rounded-lg border border-neutral-700 px-4 text-sm transition hover:bg-neutral-900 active:scale-95"
+                >
+                  Переснять
+                </button>
+                <button
+                  onClick={upload}
+                  className="min-h-11 rounded-lg bg-cyan-500 px-4 text-sm font-medium text-neutral-950 transition active:scale-95"
+                >
+                  Повторить отправку
+                </button>
+              </div>
+            )}
+
+            {errorStage === "missing-data" && (
+              <Link href="/" className="mt-3 block underline">
+                На главную
+              </Link>
+            )}
           </div>
         )}
       </footer>

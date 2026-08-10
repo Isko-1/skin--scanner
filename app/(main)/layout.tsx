@@ -14,14 +14,18 @@ export default async function MainLayout({ children }: { children: React.ReactNo
   return (
     <>
       {user && (
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 pt-3 text-xs text-slate-400">
-          <Link href="/" className="font-medium text-slate-500">
+        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 pt-3 text-xs text-[var(--color-muted-foreground)]">
+          <Link href="/" className="flex items-center gap-1.5 font-medium text-[var(--color-primary)]">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" />
+            </svg>
             Skin Scanner
           </Link>
           <div className="flex items-center gap-3">
             <span className="max-w-[160px] truncate">{user.email}</span>
             <form action="/logout" method="post">
-              <button type="submit" className="text-slate-500 underline underline-offset-2">
+              <button type="submit" className="text-[var(--color-muted-foreground)] underline underline-offset-2 hover:text-[var(--color-foreground)]">
                 Выйти
               </button>
             </form>

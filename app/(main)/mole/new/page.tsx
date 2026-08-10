@@ -2,45 +2,23 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-
-const supabase = createClient();
 
 export default function NewMolePage() {
   const router = useRouter();
   const [label, setLabel] = useState("");
   const [bodyLocation, setBodyLocation] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  async function save() {
+  // No Supabase call here on purpose: writing to `moles` this early meant an
+  // empty row landed in the DB the moment someone typed a label, even if
+  // they backed out of the camera permission prompt or just closed the tab —
+  // every abandoned flow left an orphaned mole with zero scans. Now label +
+  // body_location just ride along as query params, and /capture creates the
+  // mole row itself, only once there's an actual photo to attach to it.
+  function proceed() {
     if (!label.trim()) return;
-    setSaving(true);
-
-    // middleware.ts already guarantees only a logged-in user reaches this
-    // page, so we just read their session — the old anonymous
-    // ensureSession() fallback is gone now that real accounts exist.
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setError("Сессия истекла, войдите заново.");
-      setSaving(false);
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from("moles")
-      .insert({ label: label.trim(), body_location: bodyLocation.trim() || null, owner_id: user.id })
-      .select()
-      .single();
-
-    if (error) {
-      setError(error.message);
-      setSaving(false);
-      return;
-    }
-    router.push(`/capture?mole_id=${data.id}`);
+    const params = new URLSearchParams({ label: label.trim() });
+    if (bodyLocation.trim()) params.set("body_location", bodyLocation.trim());
+    router.push(`/capture?${params.toString()}`);
   }
 
   return (
@@ -53,7 +31,7 @@ export default function NewMolePage() {
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           placeholder="например, левое плечо"
-          className="min-h-11 rounded-lg border border-[var(--color-border)] bg-white px-3 text-base"
+          className="min-h-11 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] px-3 text-base focus:outline-none focus:ring-2 focus:ring-[var(--color-ring)]/40"
         />
       </label>
 
@@ -63,18 +41,16 @@ export default function NewMolePage() {
           value={bodyLocation}
           onChange={(e) => setBodyLocation(e.target.value)}
           placeholder="например, спина, под лопаткой"
-          className="min-h-11 rounded-lg border border-[var(--color-border)] bg-white px-3 text-base"
+          className="min-h-11 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] px-3 text-base focus:outline-none focus:ring-2 focus:ring-[var(--color-ring)]/40"
         />
       </label>
 
-      {error && <p className="text-sm text-[var(--color-destructive)]">{error}</p>}
-
       <button
-        onClick={save}
-        disabled={!label.trim() || saving}
-        className="min-h-11 rounded-lg bg-[var(--color-accent)] px-5 text-sm font-medium text-white transition active:scale-95 disabled:opacity-40"
+        onClick={proceed}
+        disabled={!label.trim()}
+        className="min-h-11 rounded-xl bg-[var(--color-accent)] px-5 text-sm font-medium text-white shadow-sm transition hover:brightness-110 active:scale-95 disabled:opacity-40"
       >
-        {saving ? "Сохранение…" : "Продолжить к съёмке"}
+        Продолжить к съёмке
       </button>
     </main>
   );

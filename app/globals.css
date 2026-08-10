@@ -4,28 +4,46 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Soft UI Evolution — medical/trustworthy, from ui-ux-pro-max --design-system.
-   Scoped to :root so /capture (which stays dark for camera visibility)
-   can keep using its own literal neutral-950 classes untouched. */
+/* Healthcare App palette — pulled from ui-ux-pro-max --design-system
+   ("healthcare app dermatology skin tracking", teal/cyan + health green,
+   WCAG-checked pairs). Replaces the earlier slate/blue "Soft UI Evolution"
+   pass, which read as generic SaaS rather than medical.
+   Scoped to :root so /capture (which stays dark on purpose, for camera
+   visibility against skin tones) keeps its own literal neutral-950 classes
+   untouched — that screen is intentionally out of scope for this palette. */
 :root {
-  --color-primary: #1e293b;
+  --color-primary: #0891b2;
   --color-on-primary: #ffffff;
-  --color-secondary: #334155;
-  --color-accent: #2563eb;
-  --color-background: #f8fafc;
-  --color-foreground: #0f172a;
-  --color-muted: #f1f2f3;
-  --color-border: #e4e5e7;
+  --color-secondary: #22d3ee;
+  --color-accent: #059669;
+  --color-background: #ecfeff;
+  --color-foreground: #164e63;
+  --color-card: #ffffff;
+  --color-muted: #e8f1f6;
+  --color-muted-foreground: #64748b;
+  --color-border: #a5f3fc;
   --color-destructive: #dc2626;
   --color-warning: #d97706;
   --color-success: #16a34a;
-  --color-ring: #1e293b;
+  --color-ring: #0891b2;
+  --shadow-panel: 0 1px 2px rgba(22, 78, 99, 0.04), 0 4px 12px rgba(8, 145, 178, 0.06);
 }
 
 body {
   font-family: "Figtree", "Noto Sans", sans-serif;
   background: var(--color-background);
   color: var(--color-foreground);
+}
+
+/* Shared card treatment so list rows, stat tiles and empty states look like
+   one system instead of each page repeating its own border/shadow combo. */
+@layer components {
+  .panel {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    box-shadow: var(--shadow-panel);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

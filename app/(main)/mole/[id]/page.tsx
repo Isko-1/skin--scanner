@@ -15,8 +15,8 @@ export default async function MoleHistoryPage({ params }: { params: { id: string
   if (!mole) {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-2 bg-[var(--color-background)] px-4 text-center text-[var(--color-foreground)]">
-        <p className="text-sm font-medium text-slate-600">Родинка не найдена</p>
-        <p className="text-sm text-slate-400">Она не существует или принадлежит другому аккаунту.</p>
+        <p className="text-sm font-medium text-[var(--color-foreground)]">Родинка не найдена</p>
+        <p className="text-sm text-[var(--color-muted-foreground)]">Она не существует или принадлежит другому аккаунту.</p>
         <Link href="/" className="mt-2 text-sm text-[var(--color-accent)] underline">
           На главную
         </Link>
@@ -45,20 +45,20 @@ export default async function MoleHistoryPage({ params }: { params: { id: string
       <header className="mb-6 flex items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold">{mole.label}</h1>
-          {mole.body_location && <p className="text-sm text-slate-500">{mole.body_location}</p>}
+          {mole.body_location && <p className="text-sm text-[var(--color-muted-foreground)]">{mole.body_location}</p>}
         </div>
         <Link
           href={`/capture?mole_id=${params.id}`}
-          className="flex min-h-11 items-center rounded-lg bg-[var(--color-accent)] px-5 text-sm font-medium text-white shadow-sm transition hover:brightness-110 active:scale-95"
+          className="flex min-h-11 items-center rounded-xl bg-[var(--color-accent)] px-5 text-sm font-medium text-white shadow-sm transition hover:brightness-110 active:scale-95"
         >
           Новый скан
         </Link>
       </header>
 
       {!analyses?.length && (
-        <div className="mt-16 flex flex-col items-center gap-2 text-center">
-          <p className="text-sm font-medium text-slate-600">Пока нет сканов</p>
-          <p className="text-sm text-slate-400">Сделайте первый скан, чтобы начать отслеживать эту родинку.</p>
+        <div className="panel mt-16 flex flex-col items-center gap-2 px-6 py-10 text-center">
+          <p className="text-sm font-medium text-[var(--color-foreground)]">Пока нет сканов</p>
+          <p className="text-sm text-[var(--color-muted-foreground)]">Сделайте первый скан, чтобы начать отслеживать эту родинку.</p>
         </div>
       )}
 
@@ -67,10 +67,7 @@ export default async function MoleHistoryPage({ params }: { params: { id: string
           const { label } = riskLevel(a.risk_score);
           const thumb = thumbs.get(a.id);
           return (
-            <li
-              key={a.id}
-              className="flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-white p-3 shadow-sm"
-            >
+            <li key={a.id} className="panel flex items-center gap-3 p-3">
               {thumb && (
                 <Image
                   src={thumb}
@@ -82,12 +79,12 @@ export default async function MoleHistoryPage({ params }: { params: { id: string
                 />
               )}
               <div className="flex-1">
-                <p className="text-sm text-slate-700">{new Date(a.created_at).toLocaleString("ru-RU")}</p>
-                <p className="text-xs text-slate-400">Резкость: {Math.round(a.sharpness_score)}</p>
+                <p className="text-sm text-[var(--color-foreground)]">{new Date(a.created_at).toLocaleString("ru-RU")}</p>
+                <p className="text-xs text-[var(--color-muted-foreground)]">Резкость: {Math.round(a.sharpness_score)}</p>
               </div>
               <div className="flex flex-col items-center gap-1">
                 <RiskGauge score={a.risk_score} />
-                <span className="text-[11px] font-medium text-slate-500">{label}</span>
+                <span className="text-[11px] font-medium text-[var(--color-muted-foreground)]">{label}</span>
               </div>
             </li>
           );
