@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "mole_id, image_path и sharpness_score обязательны" }, { status: 400 });
   }
 
-  const db = supabaseAdmin();
+  const db = supabaseAdmin;
 
   // Confirm the mole exists before doing the (comparatively expensive) inference call.
   const { data: mole, error: moleError } = await db.from("moles").select("id").eq("id", mole_id).single();

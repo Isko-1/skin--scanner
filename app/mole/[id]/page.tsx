@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { RiskGauge, riskLevel } from "@/components/risk-gauge";
 
 export default async function MoleHistoryPage({ params }: { params: { id: string } }) {
-  const db = supabaseAdmin();
+  const db = supabaseAdmin;
 
   const { data: mole } = await db.from("moles").select("*").eq("id", params.id).single();
   const { data: analyses } = await db

@@ -5,7 +5,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 // query supabaseAdmin directly without a session check (flagged in README
 // as a real gap to close before this goes further than a demo).
 export default async function HomePage() {
-  const db = supabaseAdmin();
+  const db = supabaseAdmin;
   const { data: moles } = await db
     .from("moles")
     .select("id, label, body_location")

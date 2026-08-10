@@ -5,7 +5,7 @@ import { RiskGauge, riskLevel } from "@/components/risk-gauge";
 const RISK_THRESHOLD = 0.3; // cases below this don't need a doctor's eyes
 
 export default async function DashboardPage() {
-  const db = supabaseAdmin();
+  const db = supabaseAdmin;
 
   // RLS still applies for non-admin calls, but this route runs server-side
   // with the service key, so the doctor-only gate lives at the page/auth layer
