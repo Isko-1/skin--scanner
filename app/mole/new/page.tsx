@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { supabase, ensureSession } from "@/lib/supabase";
 
 export default function NewMolePage() {
   const router = useRouter();
@@ -14,13 +14,19 @@ export default function NewMolePage() {
   async function save() {
     if (!label.trim()) return;
     setSaving(true);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+
+    let user;
+    try {
+      user = await ensureSession();
+    } catch (e: any) {
+      setError(`Не удалось создать сессию: ${e.message}`);
+      setSaving(false);
+      return;
+    }
 
     const { data, error } = await supabase
       .from("moles")
-      .insert({ label: label.trim(), body_location: bodyLocation.trim() || null, owner_id: user?.id })
+      .insert({ label: label.trim(), body_location: bodyLocation.trim() || null, owner_id: user.id })
       .select()
       .single();
 

@@ -16,3 +16,19 @@ if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+
+// RLS policies check auth.uid() = owner_id — without a session, auth.uid()
+// is null, and `null = null` is not true in SQL, so every insert fails with
+// "new row violates row-level security policy". Call this before any write
+// that needs owner_id. Requires "Allow anonymous sign-ins" enabled in
+// Supabase Dashboard → Authentication → Providers (off by default).
+export async function ensureSession() {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+  if (session?.user) return session.user
+
+  const { data, error } = await supabase.auth.signInAnonymously()
+  if (error) throw error
+  return data.user
+}
