@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
 import { scoreCanvasSharpness } from "@/lib/sharpness";
+
+const supabase = createClient();
 
 const SHARPNESS_MIN = 60; // recalibrate against real test shots — see lib/sharpness.ts
 
@@ -20,6 +22,8 @@ export default function CapturePage({ searchParams }: { searchParams: { mole_id?
   const [phase, setPhase] = useState<Phase>("camera");
   const [sharpness, setSharpness] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [cameraReady, setCameraReady] = useState(false);
+  const [flash, setFlash] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -43,7 +47,9 @@ export default function CapturePage({ searchParams }: { searchParams: { mole_id?
   function capture() {
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    if (!video || !canvas) return;
+    // Guards against the fast-tap race (video not ready yet); the shutter
+    // button is also disabled until cameraReady, so this is a safety net.
+    if (!video || !canvas || !video.videoWidth || !video.videoHeight) return;
 
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
@@ -52,6 +58,9 @@ export default function CapturePage({ searchParams }: { searchParams: { mole_id?
     const score = scoreCanvasSharpness(canvas);
     setSharpness(score);
     setPhase("review");
+
+    setFlash(true);
+    setTimeout(() => setFlash(false), 150);
   }
 
   function retake() {
@@ -69,10 +78,19 @@ export default function CapturePage({ searchParams }: { searchParams: { mole_id?
     setPhase("uploading");
 
     const blob: Blob = await new Promise((res) => canvas.toBlob((b) => res(b!), "image/jpeg", 0.92));
+
+    // middleware.ts already guarantees a logged-in user reached this page,
+    // so we just read the session instead of the old anonymous-only
+    // ensureSession() fallback.
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    const path = `${user?.id}/${moleId}/${Date.now()}.jpg`;
+    if (!user) {
+      setErrorMsg("Сессия истекла. Войдите заново и повторите попытку.");
+      setPhase("error");
+      return;
+    }
+    const path = `${user.id}/${moleId}/${Date.now()}.jpg`;
 
     const { error: uploadError } = await supabase.storage.from("mole-photos").upload(path, blob);
     if (uploadError) {
@@ -98,30 +116,81 @@ export default function CapturePage({ searchParams }: { searchParams: { mole_id?
   const isBlurry = sharpness !== null && sharpness < SHARPNESS_MIN;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col bg-neutral-950 text-neutral-100">
-      <header className="border-b border-neutral-800 px-4 py-3">
+    // h-dvh (not min-h-screen) locks this to the actual visible viewport —
+    // min-h-screen plus mobile browsers' shifting address-bar chrome could
+    // make the page taller than what's on screen, pushing the shutter
+    // button in the footer below the fold and forcing a scroll to reach it.
+    // overflow-hidden backs that up so there's never a scrollbar to need in
+    // the first place. Combined with the viewport meta tag fix in
+    // app/layout.tsx, the button should now always be immediately visible
+    // and tappable without any scrolling or zooming.
+    <main className="mx-auto flex h-dvh max-w-md flex-col overflow-hidden bg-neutral-950 text-neutral-100">
+      <header className="flex items-center gap-3 border-b border-neutral-800/80 bg-neutral-950/80 px-4 py-3 backdrop-blur">
+        <button
+          onClick={() => router.back()}
+          aria-label="Назад"
+          className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-800 hover:text-neutral-100"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
         <h1 className="text-sm font-medium tracking-wide text-neutral-400">СЪЁМКА РОДИНКИ</h1>
       </header>
 
       <div className="relative flex-1 overflow-hidden bg-black">
+        {/* Video and canvas stay mounted for the whole page lifetime and just
+            toggle visibility — unmounting either one drops the live srcObject
+            (video) or the ref target capture() writes into (canvas). */}
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          onLoadedMetadata={() => setCameraReady(true)}
+          className={`h-full w-full object-cover ${phase === "camera" ? "" : "hidden"}`}
+        />
+
         {phase === "camera" && (
           <>
-            <video ref={videoRef} autoPlay playsInline muted className="h-full w-full object-cover" />
             {/* Alignment guide: centered circle to line up the mole */}
             <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="18" fill="none" stroke="#22d3ee" strokeWidth="0.6" strokeDasharray="2 2" />
               <line x1="50" y1="28" x2="50" y2="34" stroke="#22d3ee" strokeWidth="0.4" />
               <line x1="50" y1="66" x2="50" y2="72" stroke="#22d3ee" strokeWidth="0.4" />
             </svg>
+            {!cameraReady && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                <p className="text-sm text-neutral-300">Включаем камеру…</p>
+              </div>
+            )}
+            {cameraReady && (
+              <p className="absolute inset-x-0 top-4 text-center text-xs text-neutral-300">
+                Наведите родинку в круг
+              </p>
+            )}
           </>
         )}
 
-        {phase !== "camera" && <canvas ref={canvasRef} className="h-full w-full object-cover" />}
+        <canvas
+          ref={canvasRef}
+          className={`h-full w-full object-cover ${phase === "camera" ? "hidden" : ""}`}
+        />
+
+        {/* Shutter flash feedback */}
+        <div
+          className={`pointer-events-none absolute inset-0 bg-white transition-opacity duration-150 ${
+            flash ? "opacity-80" : "opacity-0"
+          }`}
+        />
 
         {phase === "review" && (
           <div
-            className={`absolute inset-x-0 bottom-0 border-t px-4 py-2 text-center text-sm ${
-              isBlurry ? "border-red-500/40 bg-red-950/80 text-red-300" : "border-emerald-500/40 bg-emerald-950/80 text-emerald-300"
+            role="status"
+            className={`absolute inset-x-3 bottom-3 rounded-xl border px-4 py-3 text-center text-sm backdrop-blur ${
+              isBlurry
+                ? "border-red-500/40 bg-red-950/80 text-red-300"
+                : "border-emerald-500/40 bg-emerald-950/80 text-emerald-300"
             }`}
           >
             {isBlurry ? "Кадр смазан — переснимите" : "Резкость в норме"}
@@ -129,12 +198,13 @@ export default function CapturePage({ searchParams }: { searchParams: { mole_id?
         )}
       </div>
 
-      <footer className="flex items-center justify-center gap-4 border-t border-neutral-800 px-4 py-5">
+      <footer className="flex items-center justify-center gap-4 border-t border-neutral-800/80 bg-neutral-950/80 px-4 py-5 backdrop-blur">
         {phase === "camera" && (
           <button
             onClick={capture}
-            className="h-16 w-16 rounded-full border-4 border-neutral-300 bg-white/90 active:scale-95"
+            disabled={!cameraReady}
             aria-label="Снять кадр"
+            className="h-16 w-16 rounded-full border-4 border-neutral-300 bg-white/90 transition active:scale-95 disabled:opacity-40"
           />
         )}
 
@@ -142,13 +212,14 @@ export default function CapturePage({ searchParams }: { searchParams: { mole_id?
           <>
             <button
               onClick={retake}
-              className="min-h-11 rounded-lg border border-neutral-700 px-5 text-sm active:scale-95"
+              className="min-h-11 rounded-lg border border-neutral-700 px-5 text-sm transition hover:bg-neutral-900 active:scale-95"
             >
               Переснять
             </button>
             <button
               onClick={upload}
               disabled={isBlurry}
+              title={isBlurry ? "Сначала переснимите чёткий кадр" : undefined}
               className="min-h-11 rounded-lg bg-cyan-500 px-5 text-sm font-medium text-neutral-950 transition active:scale-95 disabled:opacity-40"
             >
               Отправить
