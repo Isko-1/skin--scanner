@@ -1,90 +1,15 @@
 {
   "pages": {
-    "/_not-found/page": [
-      "static/chunks/webpack-03f7c6bc932ce1e3.js",
-      "static/chunks/fd9d1056-1aae0987937804d3.js",
-      "static/chunks/117-a7f94d143874c344.js",
-      "static/chunks/main-app-ff2932b68a09820b.js",
-      "static/chunks/app/_not-found/page-a6fb07452d43a535.js"
+    "/login/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/login/page.js"
     ],
     "/layout": [
-      "static/chunks/webpack-03f7c6bc932ce1e3.js",
-      "static/chunks/fd9d1056-1aae0987937804d3.js",
-      "static/chunks/117-a7f94d143874c344.js",
-      "static/chunks/main-app-ff2932b68a09820b.js",
-      "static/css/5dca2f9777069591.css",
-      "static/chunks/app/layout-a3bdde3385a1057f.js"
-    ],
-    "/login/page": [
-      "static/chunks/webpack-03f7c6bc932ce1e3.js",
-      "static/chunks/fd9d1056-1aae0987937804d3.js",
-      "static/chunks/117-a7f94d143874c344.js",
-      "static/chunks/main-app-ff2932b68a09820b.js",
-      "static/chunks/44530001-3d82f5dd4c68b950.js",
-      "static/chunks/972-6576aeaf1f991e3d.js",
-      "static/chunks/453-2bbfc431ef041a8b.js",
-      "static/chunks/app/login/page-ab691bcdd5c3923f.js"
-    ],
-    "/register/page": [
-      "static/chunks/webpack-03f7c6bc932ce1e3.js",
-      "static/chunks/fd9d1056-1aae0987937804d3.js",
-      "static/chunks/117-a7f94d143874c344.js",
-      "static/chunks/main-app-ff2932b68a09820b.js",
-      "static/chunks/44530001-3d82f5dd4c68b950.js",
-      "static/chunks/972-6576aeaf1f991e3d.js",
-      "static/chunks/453-2bbfc431ef041a8b.js",
-      "static/chunks/app/register/page-b43360bd41f1c6de.js"
-    ],
-    "/capture/page": [
-      "static/chunks/webpack-03f7c6bc932ce1e3.js",
-      "static/chunks/fd9d1056-1aae0987937804d3.js",
-      "static/chunks/117-a7f94d143874c344.js",
-      "static/chunks/main-app-ff2932b68a09820b.js",
-      "static/chunks/44530001-3d82f5dd4c68b950.js",
-      "static/chunks/453-2bbfc431ef041a8b.js",
-      "static/chunks/app/capture/page-12aeecfa9120454a.js"
-    ],
-    "/(main)/mole/new/page": [
-      "static/chunks/webpack-03f7c6bc932ce1e3.js",
-      "static/chunks/fd9d1056-1aae0987937804d3.js",
-      "static/chunks/117-a7f94d143874c344.js",
-      "static/chunks/main-app-ff2932b68a09820b.js",
-      "static/chunks/44530001-3d82f5dd4c68b950.js",
-      "static/chunks/453-2bbfc431ef041a8b.js",
-      "static/chunks/app/(main)/mole/new/page-b29222f41171b5fa.js"
-    ],
-    "/(main)/layout": [
-      "static/chunks/webpack-03f7c6bc932ce1e3.js",
-      "static/chunks/fd9d1056-1aae0987937804d3.js",
-      "static/chunks/117-a7f94d143874c344.js",
-      "static/chunks/main-app-ff2932b68a09820b.js",
-      "static/chunks/972-6576aeaf1f991e3d.js",
-      "static/chunks/app/(main)/layout-aac566341f91f78a.js"
-    ],
-    "/(main)/mole/[id]/page": [
-      "static/chunks/webpack-03f7c6bc932ce1e3.js",
-      "static/chunks/fd9d1056-1aae0987937804d3.js",
-      "static/chunks/117-a7f94d143874c344.js",
-      "static/chunks/main-app-ff2932b68a09820b.js",
-      "static/chunks/972-6576aeaf1f991e3d.js",
-      "static/chunks/878-c8fbb538735493c7.js",
-      "static/chunks/app/(main)/mole/[id]/page-d16b8021b9b0f530.js"
-    ],
-    "/(main)/dashboard/page": [
-      "static/chunks/webpack-03f7c6bc932ce1e3.js",
-      "static/chunks/fd9d1056-1aae0987937804d3.js",
-      "static/chunks/117-a7f94d143874c344.js",
-      "static/chunks/main-app-ff2932b68a09820b.js",
-      "static/chunks/972-6576aeaf1f991e3d.js",
-      "static/chunks/app/(main)/dashboard/page-3869c3619c9beb38.js"
-    ],
-    "/(main)/page": [
-      "static/chunks/webpack-03f7c6bc932ce1e3.js",
-      "static/chunks/fd9d1056-1aae0987937804d3.js",
-      "static/chunks/117-a7f94d143874c344.js",
-      "static/chunks/main-app-ff2932b68a09820b.js",
-      "static/chunks/972-6576aeaf1f991e3d.js",
-      "static/chunks/app/(main)/page-8a664edff8dd8854.js"
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/layout.css",
+      "static/chunks/app/layout.js"
     ]
   }
 }
