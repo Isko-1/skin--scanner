@@ -2,12 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase/server";
 import { classifyImage } from "@/lib/classifier";
+import { SKIN_RATIO_MIN } from "@/lib/skin-detection";
 
 export async function POST(req: NextRequest) {
-  const { mole_id, image_path, sharpness_score } = await req.json();
+  const { mole_id, image_path, sharpness_score, skin_ratio } = await req.json();
 
-  if (!mole_id || !image_path || sharpness_score == null) {
-    return NextResponse.json({ error: "mole_id, image_path и sharpness_score обязательны" }, { status: 400 });
+  if (!mole_id || !image_path || sharpness_score == null || skin_ratio == null) {
+    return NextResponse.json({ error: "mole_id, image_path, sharpness_score и skin_ratio обязательны" }, { status: 400 });
+  }
+
+  // The classifier is a 7-class HAM10000 model with no "not skin" class —
+  // fed a wall/floor/random object it still confidently forces a benign-
+  // leaning verdict (majority-class bias) rather than refusing. That reads
+  // as a real "low risk" result to a person checking a mole, which is worse
+  // than an error. Reject before the (paid, rate-limited) HF call runs at
+  // all, rather than only warning client-side where it's easy to ignore.
+  if (skin_ratio < SKIN_RATIO_MIN) {
+    return NextResponse.json(
+      { error: "На фото не похоже на кожу — переснимите родинку крупным планом, чтобы она занимала большую часть кадра" },
+      { status: 422 }
+    );
   }
 
   // This route uses the service key below (to write class_probs/risk_score

@@ -63,7 +63,12 @@ export async function classifyImage(imageUrl: string): Promise<Record<string, nu
   const predictions: { label: string; score: number }[] = await res!.json();
 
   const probs: Record<string, number> = {};
-  for (const { label, score } of predictions) probs[normalizeLabel(label)] = score;
+  for (const { label, score } of predictions) {
+    const key = normalizeLabel(label);
+    // Several HAM10000 classes collapse into the same "benign"/"malignant"
+    // bucket — sum instead of overwrite, or only the last-seen class survives.
+    probs[key] = (probs[key] ?? 0) + score;
+  }
   return probs;
 }
 

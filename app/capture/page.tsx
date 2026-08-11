@@ -5,11 +5,15 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { scoreCanvasSharpness } from "@/lib/sharpness";
+import { scoreSkinToneRatio, SKIN_RATIO_MIN } from "@/lib/skin-detection";
 import { Ripple } from "@/components/ui/ripple";
 
 const supabase = createClient();
 
 const SHARPNESS_MIN = 60; // recalibrate against real test shots — see lib/sharpness.ts
+// Below this, the frame probably isn't skin at all (wall, floor, fabric...).
+// Deliberately non-blocking here — see lib/skin-detection.ts for why; the
+// actual hard gate on SKIN_RATIO_MIN runs server-side in app/api/classify.
 const CLASSIFY_TIMEOUT_MS = 30_000;
 
 type Phase = "camera" | "review" | "uploading" | "error";
@@ -40,19 +44,58 @@ export default function CapturePage({ searchParams }: { searchParams: CaptureSea
 
   const [phase, setPhase] = useState<Phase>("camera");
   const [sharpness, setSharpness] = useState<number | null>(null);
+  const [skinRatio, setSkinRatio] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [errorStage, setErrorStage] = useState<ErrorStage>(null);
   const [cameraReady, setCameraReady] = useState(false);
   const [flash, setFlash] = useState(false);
+  const [focusing, setFocusing] = useState(false);
   const [uploadStage, setUploadStage] = useState<UploadStage>(null);
   // Set once storage upload succeeds, so a retry after a classify failure
   // resumes from "analyze" instead of re-uploading the same photo again.
   const [uploadedPath, setUploadedPath] = useState<string | null>(null);
 
+  // Phones autofocus for "look at a face across the room", not "2cm from a
+  // mole" — without nudging the track toward continuous macro-ish refocus,
+  // shots come out soft even on a perfectly steady hand. Both calls are
+  // best-effort: getCapabilities()/focusMode are unsupported on iOS Safari
+  // and some Android WebViews, so this silently no-ops there rather than
+  // blocking capture on a capability most phones do have.
+  async function applyFocusMode(mode: "continuous" | "single-shot") {
+    const track = streamRef.current?.getVideoTracks()[0];
+    if (!track?.getCapabilities) return;
+    const capabilities = track.getCapabilities() as MediaTrackCapabilities & { focusMode?: string[] };
+    if (!capabilities.focusMode?.includes(mode)) return;
+    try {
+      await track.applyConstraints({ advanced: [{ focusMode: mode } as MediaTrackConstraintSet] });
+    } catch {
+      // Not fatal — camera keeps working, just without the focus nudge.
+    }
+  }
+
+  // Tap-to-refocus: nudges into a one-shot focus pass, then back to
+  // continuous. Where the browser doesn't support focusMode at all this is a
+  // harmless no-op (applyFocusMode returns early), so it's always safe to wire up.
+  async function tapToFocus() {
+    if (phase !== "camera") return;
+    setFocusing(true);
+    await applyFocusMode("single-shot");
+    setTimeout(async () => {
+      await applyFocusMode("continuous");
+      setFocusing(false);
+    }, 700);
+  }
+
   async function requestCamera() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment", width: { ideal: 1280 } },
+        video: {
+          facingMode: "environment",
+          width: { ideal: 1280 },
+          // "advanced" constraints are best-effort per spec — unsupported ones
+          // are ignored rather than rejecting the whole getUserMedia call.
+          advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet],
+        },
       });
       if (!mountedRef.current) {
         stream.getTracks().forEach((t) => t.stop());
@@ -60,6 +103,7 @@ export default function CapturePage({ searchParams }: { searchParams: CaptureSea
       }
       streamRef.current = stream;
       if (videoRef.current) videoRef.current.srcObject = stream;
+      await applyFocusMode("continuous");
       setErrorMsg(null);
       setErrorStage(null);
       setPhase("camera");
@@ -136,6 +180,7 @@ export default function CapturePage({ searchParams }: { searchParams: CaptureSea
 
     const score = scoreCanvasSharpness(canvas);
     setSharpness(score);
+    setSkinRatio(scoreSkinToneRatio(canvas));
     setPhase("review");
 
     setFlash(true);
@@ -144,6 +189,7 @@ export default function CapturePage({ searchParams }: { searchParams: CaptureSea
 
   function retake() {
     setSharpness(null);
+    setSkinRatio(null);
     setUploadedPath(null);
     setPhase("camera");
   }
@@ -224,7 +270,12 @@ export default function CapturePage({ searchParams }: { searchParams: CaptureSea
       res = await fetch("/api/classify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mole_id: currentMoleId, image_path: path, sharpness_score: sharpness }),
+        body: JSON.stringify({
+          mole_id: currentMoleId,
+          image_path: path,
+          sharpness_score: sharpness,
+          skin_ratio: skinRatio,
+        }),
         signal: controller.signal,
       });
     } catch (e) {
@@ -252,6 +303,11 @@ export default function CapturePage({ searchParams }: { searchParams: CaptureSea
   }
 
   const isBlurry = sharpness !== null && sharpness < SHARPNESS_MIN;
+  // Soft signal only — never blocks "Отправить" the way isBlurry does. The
+  // heuristic is unreliable enough across skin tones and lighting that
+  // hard-blocking on it would refuse legitimate scans; it's there to make
+  // someone pause and double-check, not to gatekeep.
+  const looksOffTarget = !isBlurry && skinRatio !== null && skinRatio < SKIN_RATIO_MIN;
 
   return (
     // h-dvh (not min-h-screen) locks this to the actual visible viewport —
@@ -289,6 +345,7 @@ export default function CapturePage({ searchParams }: { searchParams: CaptureSea
           playsInline
           muted
           onLoadedMetadata={() => setCameraReady(true)}
+          onClick={tapToFocus}
           className={`h-full w-full object-cover ${phase === "camera" ? "" : "hidden"}`}
         />
 
@@ -307,8 +364,11 @@ export default function CapturePage({ searchParams }: { searchParams: CaptureSea
             )}
             {cameraReady && (
               <p className="absolute inset-x-0 top-4 text-center text-xs text-neutral-300">
-                Наведите родинку в круг
+                Наведите родинку в круг · тап для фокуса
               </p>
+            )}
+            {focusing && (
+              <p className="absolute inset-x-0 bottom-4 text-center text-xs text-cyan-300">Фокусируем…</p>
             )}
           </>
         )}
@@ -331,10 +391,16 @@ export default function CapturePage({ searchParams }: { searchParams: CaptureSea
             className={`absolute inset-x-3 bottom-3 rounded-xl border px-4 py-3 text-center text-sm backdrop-blur ${
               isBlurry
                 ? "border-red-500/40 bg-red-950/80 text-red-300"
-                : "border-emerald-500/40 bg-emerald-950/80 text-emerald-300"
+                : looksOffTarget
+                  ? "border-amber-500/40 bg-amber-950/80 text-amber-300"
+                  : "border-emerald-500/40 bg-emerald-950/80 text-emerald-300"
             }`}
           >
-            {isBlurry ? "Кадр смазан — переснимите" : "Резкость в норме"}
+            {isBlurry
+              ? "Кадр смазан — переснимите"
+              : looksOffTarget
+                ? "Не похоже на кожу в кадре — проверьте кадр перед отправкой"
+                : "Резкость в норме"}
           </div>
         )}
       </div>
