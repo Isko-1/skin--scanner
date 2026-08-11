@@ -65,7 +65,13 @@ export default async function HomePage() {
                 <div>
                   <p className="font-medium">{m.label}</p>
                   {m.body_location && <p className="text-sm text-[var(--color-muted-foreground)]">{m.body_location}</p>}
-                  <p className="text-xs text-[var(--color-muted-foreground)]">{analyses.length} скан(ов)</p>
+                  {analyses.length ? (
+                    <p className="text-xs text-[var(--color-muted-foreground)]">{analyses.length} скан(ов)</p>
+                  ) : (
+                    <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-[var(--color-warning)]/10 px-2 py-0.5 text-xs font-medium text-[var(--color-warning)]">
+                      Скан не завершён
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   {lastAnalysis && (

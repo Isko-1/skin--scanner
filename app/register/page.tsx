@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { AnimatedGradientText } from "@/components/ui/animated-gradient-text";
 
 const supabase = createClient();
 
@@ -85,6 +86,9 @@ export default function RegisterPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-4 bg-[var(--color-background)] px-4 py-6 text-[var(--color-foreground)]">
       <div className="mb-2">
+        <p className="text-xs font-medium uppercase tracking-wide">
+          <AnimatedGradientText speed={0.4}>Skin Scanner</AnimatedGradientText>
+        </p>
         <h1 className="text-lg font-semibold">Регистрация</h1>
         <p className="text-sm text-[var(--color-muted-foreground)]">Родинки и статистика сохранятся за вашим аккаунтом.</p>
       </div>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { AnimatedGradientText } from "@/components/ui/animated-gradient-text";
 
 // Shared header for the authenticated part of the app (home, mole detail,
 // mole/new, doctor dashboard). /capture is intentionally outside this group —
@@ -20,7 +21,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
               <circle cx="12" cy="12" r="9" />
               <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" />
             </svg>
-            Skin Scanner
+            <AnimatedGradientText speed={0.4}>Skin Scanner</AnimatedGradientText>
           </Link>
           <div className="flex items-center gap-3">
             <span className="max-w-[160px] truncate">{user.email}</span>

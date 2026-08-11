@@ -1,12 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+
+const supabase = createClient();
+const LABEL_MAX = 60;
+const LOCATION_MAX = 80;
 
 export default function NewMolePage() {
   const router = useRouter();
   const [label, setLabel] = useState("");
   const [bodyLocation, setBodyLocation] = useState("");
+  // Existing labels for this user, lowercased, just for a soft duplicate
+  // warning — nothing here blocks submission, since "родинка" x3 is a
+  // legitimate thing to have before you've picked better names for them.
+  const [existingLabels, setExistingLabels] = useState<string[]>([]);
+
+  useEffect(() => {
+    supabase
+      .from("moles")
+      .select("label")
+      .then(({ data }) => setExistingLabels((data ?? []).map((m) => m.label.trim().toLowerCase())));
+  }, []);
+
+  const isDuplicate = label.trim() !== "" && existingLabels.includes(label.trim().toLowerCase());
 
   // No Supabase call here on purpose: writing to `moles` this early meant an
   // empty row landed in the DB the moment someone typed a label, even if
@@ -31,9 +49,15 @@ export default function NewMolePage() {
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           placeholder="например, левое плечо"
+          maxLength={LABEL_MAX}
           className="min-h-11 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] px-3 text-base focus:outline-none focus:ring-2 focus:ring-[var(--color-ring)]/40"
         />
       </label>
+      {isDuplicate && (
+        <p className="-mt-2 text-xs text-[var(--color-warning)]">
+          Родинка с таким названием уже есть — можно продолжить, но её будет сложнее отличить в списке.
+        </p>
+      )}
 
       <label className="flex flex-col gap-1 text-sm">
         Расположение на теле (необязательно)
@@ -41,6 +65,7 @@ export default function NewMolePage() {
           value={bodyLocation}
           onChange={(e) => setBodyLocation(e.target.value)}
           placeholder="например, спина, под лопаткой"
+          maxLength={LOCATION_MAX}
           className="min-h-11 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] px-3 text-base focus:outline-none focus:ring-2 focus:ring-[var(--color-ring)]/40"
         />
       </label>

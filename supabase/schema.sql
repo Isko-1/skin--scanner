@@ -76,3 +76,28 @@ insert into storage.buckets (id, name, public) values ('mole-photos', 'mole-phot
 create policy "own photo storage" on storage.objects
   for all using (bucket_id = 'mole-photos' and auth.uid()::text = (storage.foldername(name))[1])
   with check (bucket_id = 'mole-photos' and auth.uid()::text = (storage.foldername(name))[1]);
+
+-- Optional: sweep up moles that got created but never got a photo attached
+-- (e.g. mole insert in app/capture succeeded, then the storage upload or
+-- classify call failed and the person gave up on retrying). The 24h
+-- threshold is deliberate slack, not a guess at how long an upload takes —
+-- it just needs to be comfortably longer than any real retry window so this
+-- never races a person who's mid-flow. SECURITY DEFINER because RLS on
+-- `moles` is owner-scoped and this needs to sweep across all owners.
+create or replace function cleanup_orphan_moles() returns void
+  language sql security definer set search_path = public as $$
+  delete from moles
+  where created_at < now() - interval '24 hours'
+    and not exists (select 1 from photo_analyses where photo_analyses.mole_id = moles.id);
+$$;
+
+-- Wire it to run nightly. Requires the pg_cron extension, which on Supabase
+-- is enabled per-project under Database → Extensions (not always on by
+-- default) — enable it first, then run this once:
+--
+-- select cron.schedule('cleanup-orphan-moles', '0 3 * * *', 'select cleanup_orphan_moles();');
+--
+-- Without pg_cron, call select cleanup_orphan_moles(); by hand or from any
+-- external scheduler that can reach the DB — the home page badge already
+-- flags unfinished moles to the user in the meantime, so this is cleanup
+-- hygiene rather than something the UI depends on.
