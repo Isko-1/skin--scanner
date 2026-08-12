@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { RiskGauge, riskLevel } from "@/components/risk-gauge";
 import { ActiveMoleRegister } from "@/components/active-mole-register";
 import { PdfReportButton } from "@/components/pdf-report-button";
-
+import { SpectralLive } from "@/components/spectral-live";
 // Was: supabaseAdmin (service key) fetching by id with no ownership check —
 // anyone who knew or guessed a mole UUID could open another person's mole
 // history. The session client + "own moles" RLS policy makes this return
