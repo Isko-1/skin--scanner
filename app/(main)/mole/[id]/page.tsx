@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { RiskGauge, riskLevel } from "@/components/risk-gauge";
+import { ActiveMoleRegister } from "@/components/active-mole-register";
+import { PdfReportButton } from "@/components/pdf-report-button";
 
 // Was: supabaseAdmin (service key) fetching by id with no ownership check —
 // anyone who knew or guessed a mole UUID could open another person's mole
@@ -42,18 +44,28 @@ export default async function MoleHistoryPage({ params }: { params: { id: string
 
   return (
     <main className="mx-auto min-h-screen max-w-md bg-[var(--color-background)] px-4 py-6 text-[var(--color-foreground)]">
+      {/* Регистрируем открытую родинку как активную в сессии */}
+      <ActiveMoleRegister moleId={params.id} />
+
       <header className="mb-6 flex items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold">{mole.label}</h1>
           {mole.body_location && <p className="text-sm text-[var(--color-muted-foreground)]">{mole.body_location}</p>}
         </div>
-        <Link
-          href={`/capture?mole_id=${params.id}`}
-          className="flex min-h-11 items-center rounded-xl bg-[var(--color-accent)] px-5 text-sm font-medium text-white shadow-sm transition hover:brightness-110 active:scale-95"
-        >
-          Новый скан
-        </Link>
+        <div className="flex items-center gap-2">
+          <PdfReportButton moleLabel={mole.label} bodyLocation={mole.body_location} />
+          <Link
+            href={`/capture?mole_id=${params.id}`}
+            className="flex min-h-11 items-center rounded-xl bg-[var(--color-accent)] px-5 text-sm font-medium text-white shadow-sm transition hover:brightness-110 active:scale-95"
+          >
+            Новый скан
+          </Link>
+        </div>
       </header>
+
+      <div className="mb-4">
+        <SpectralLive moleId={params.id} />
+      </div>
 
       {!analyses?.length && (
         <div className="panel mt-16 flex flex-col items-center gap-2 px-6 py-10 text-center">
@@ -90,6 +102,16 @@ export default async function MoleHistoryPage({ params }: { params: { id: string
           );
         })}
       </ul>
+
+      {!!analyses?.length && (
+        <p className="mt-4 flex items-start gap-1.5 text-xs text-[var(--color-muted-foreground)]">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 shrink-0" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 8v5M12 16h.01" strokeLinecap="round" />
+          </svg>
+          Это автоматическая оценка, а не диагноз. Низкий risk score не отменяет очный осмотр у врача, особенно если родинка меняется, кровоточит или чешется.
+        </p>
+      )}
     </main>
   );
 }

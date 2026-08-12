@@ -32,12 +32,25 @@ create table spectral_readings (
   photo_analysis_id uuid references photo_analyses(id) on delete set null, -- links back to the scan it augments
   channels jsonb not null,             -- {"f1":.., ..., "f8":.., "clear":.., "nir":..} 11 AS7341 channels
   risk_score numeric not null check (risk_score >= 0 and risk_score <= 1),
+  pattern_match jsonb,                 -- {patternId, label, category, similarity} from lib/spectral-patterns.ts —
+                                        -- nullable so old rows inserted before this shipped don't need backfilling
   created_at timestamptz not null default now()
 );
+
+-- Adds pattern_match to spectral_readings if the table already exists from
+-- before this column shipped (re-running schema.sql on a live DB, rather
+-- than a fresh one) — the CREATE TABLE above only runs on a fresh database.
+alter table spectral_readings add column if not exists pattern_match jsonb;
 
 create index photo_analyses_mole_id_idx on photo_analyses (mole_id, created_at desc);
 create index spectral_readings_mole_id_idx on spectral_readings (mole_id, created_at desc);
 create index photo_analyses_risk_idx on photo_analyses (risk_score desc);
+
+-- Lets the front-end (components/spectral-live.tsx) subscribe to new probe
+-- readings over a WebSocket instead of polling. RLS still applies to
+-- Realtime events, so "own spectral_readings" below still governs who sees
+-- what — this only turns the channel on, it doesn't bypass row security.
+alter publication supabase_realtime add table spectral_readings;
 
 -- Row Level Security: a user only sees their own moles and the analyses hanging off them.
 alter table moles enable row level security;
