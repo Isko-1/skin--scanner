@@ -2,9 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { RiskGauge, riskLevel } from "@/components/risk-gauge";
-import { ActiveMoleRegister } from "@/components/active-mole-register";
 import { PdfReportButton } from "@/components/pdf-report-button";
 import { SpectralLive } from "@/components/spectral-live";
+import { SpectralButtons } from "@/components/spectral-buttons";
 // Was: supabaseAdmin (service key) fetching by id with no ownership check —
 // anyone who knew or guessed a mole UUID could open another person's mole
 // history. The session client + "own moles" RLS policy makes this return
@@ -44,9 +44,6 @@ export default async function MoleHistoryPage({ params }: { params: { id: string
 
   return (
     <main className="mx-auto min-h-screen max-w-md bg-[var(--color-background)] px-4 py-6 text-[var(--color-foreground)]">
-      {/* Регистрируем открытую родинку как активную в сессии */}
-      <ActiveMoleRegister moleId={params.id} />
-
       <header className="mb-6 flex items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold">{mole.label}</h1>
@@ -63,8 +60,9 @@ export default async function MoleHistoryPage({ params }: { params: { id: string
         </div>
       </header>
 
-      <div className="mb-4">
+      <div className="mb-4 space-y-3">
         <SpectralLive moleId={params.id} />
+        <SpectralButtons moleId={params.id} />
       </div>
 
       {!analyses?.length && (

@@ -26,24 +26,43 @@ create table photo_analyses (
 );
 
 -- One row per spectral (AS7341) reading from the probe. P1.
+--
+-- reading_type/paired_with implement the lesion+reference protocol: the
+-- probe sends two separate readings per session (see app/api/spectral -
+-- route.ts for the 5-minute pairing window), and risk_score/pattern_match
+-- can only be computed once both sides of a pair exist. A 'reference'
+-- reading never gets its own risk_score (it's a baseline, not a lesion);
+-- a 'lesion' reading's risk_score/pattern_match start null and get filled
+-- in by an UPDATE once its matching reference arrives (or vice versa).
 create table spectral_readings (
   id uuid primary key default gen_random_uuid(),
   mole_id uuid not null references moles(id) on delete cascade,
   photo_analysis_id uuid references photo_analyses(id) on delete set null, -- links back to the scan it augments
+  reading_type text not null default 'lesion' check (reading_type in ('lesion', 'reference')),
   channels jsonb not null,             -- {"f1":.., ..., "f8":.., "clear":.., "nir":..} 11 AS7341 channels
-  risk_score numeric not null check (risk_score >= 0 and risk_score <= 1),
-  pattern_match jsonb,                 -- {patternId, label, category, similarity} from lib/spectral-patterns.ts —
-                                        -- nullable so old rows inserted before this shipped don't need backfilling
+  paired_with uuid references spectral_readings(id) on delete set null, -- the other reading in this lesion+reference pair, once matched
+  risk_score numeric check (risk_score is null or (risk_score >= 0 and risk_score <= 1)), -- null until paired (or always null for 'reference' rows)
+  pattern_match jsonb,                 -- {patternId, label, category, similarity} from lib/spectral-patterns.ts — null until paired
   created_at timestamptz not null default now()
 );
 
--- Adds pattern_match to spectral_readings if the table already exists from
--- before this column shipped (re-running schema.sql on a live DB, rather
--- than a fresh one) — the CREATE TABLE above only runs on a fresh database.
+-- Adds the lesion+reference pairing columns to spectral_readings if the
+-- table already exists from before this protocol shipped (re-running
+-- schema.sql on a live DB rather than a fresh one) — the CREATE TABLE above
+-- only runs on a fresh database. Also relaxes the old NOT NULL on
+-- risk_score, since 'reference' and not-yet-paired rows legitimately have
+-- none — Postgres lets you drop a NOT NULL that's already satisfied
+-- (existing rows all had a risk_score) without touching data.
+alter table spectral_readings add column if not exists reading_type text not null default 'lesion' check (reading_type in ('lesion', 'reference'));
+alter table spectral_readings add column if not exists paired_with uuid references spectral_readings(id) on delete set null;
+alter table spectral_readings alter column risk_score drop not null;
 alter table spectral_readings add column if not exists pattern_match jsonb;
 
 create index photo_analyses_mole_id_idx on photo_analyses (mole_id, created_at desc);
 create index spectral_readings_mole_id_idx on spectral_readings (mole_id, created_at desc);
+-- Powers the pairing lookup in app/api/spectral/route.ts: "find an unpaired
+-- reading of the opposite type, for this mole, within the last 5 minutes".
+create index spectral_readings_pairing_idx on spectral_readings (mole_id, reading_type, created_at desc) where paired_with is null;
 create index photo_analyses_risk_idx on photo_analyses (risk_score desc);
 
 -- Lets the front-end (components/spectral-live.tsx) subscribe to new probe

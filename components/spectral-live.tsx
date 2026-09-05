@@ -13,7 +13,8 @@ interface PatternMatch {
 
 interface SpectralReading {
   id: string;
-  risk_score: number;
+  reading_type: "lesion" | "reference";
+  risk_score: number | null;
   pattern_match: PatternMatch | null;
   channels?: SpectralChannels;
   created_at: string;
@@ -26,14 +27,16 @@ export function SpectralLive({ moleId }: { moleId: string }) {
   useEffect(() => {
     const supabase = createClient();
 
-    // Загружаем последний созданный замер
+    // Только 'lesion' — у 'reference' никогда нет risk_score/pattern_match
+    // (это опорный замер здоровой кожи, не сам по себе результат).
     supabase
       .from("spectral_readings")
       .select("*")
       .eq("mole_id", moleId)
+      .eq("reading_type", "lesion")
       .order("created_at", { ascending: false })
       .limit(1)
-      .single()
+      .maybeSingle()
       .then(({ data }) => {
         if (data) setLatest(data as SpectralReading);
       });
@@ -43,7 +46,21 @@ export function SpectralLive({ moleId }: { moleId: string }) {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "spectral_readings", filter: `mole_id=eq.${moleId}` },
-        (payload) => setLatest(payload.new as SpectralReading)
+        (payload) => {
+          const row = payload.new as SpectralReading;
+          if (row.reading_type === "lesion") setLatest(row);
+        }
+      )
+      .on(
+        // Ловим момент, когда пришла пара (reference) и risk_score/
+        // pattern_match у уже показанного lesion-замера заполняются задним
+        // числом — без этого UI так и остался бы на "ждём вторую половину".
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "spectral_readings", filter: `mole_id=eq.${moleId}` },
+        (payload) => {
+          const row = payload.new as SpectralReading;
+          setLatest((current) => (current && row.id === current.id ? row : current));
+        }
       )
       .subscribe((status) => setConnected(status === "SUBSCRIBED"));
 
@@ -59,6 +76,25 @@ export function SpectralLive({ moleId }: { moleId: string }) {
           className={`h-2 w-2 rounded-full ${connected ? "bg-[var(--color-success)]" : "bg-[var(--color-muted-foreground)]"}`}
         />
         {connected ? "Ждём замер со спектрального зонда…" : "Подключаемся…"}
+      </div>
+    );
+  }
+
+  // Замер родинки уже пришёл, но пары (замера здоровой кожи рядом) ещё нет —
+  // risk_score/pattern_match посчитать не из чего. Показываем это честно,
+  // а не как нулевой/по умолчанию низкий риск.
+  if (latest.risk_score === null) {
+    return (
+      <div className="panel flex items-center gap-3 p-3">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-[var(--color-border)]">
+          <span className="text-xs text-[var(--color-muted-foreground)]">…</span>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-[var(--color-foreground)]">Замер родинки получен</p>
+          <p className="text-xs text-[var(--color-muted-foreground)]">
+            Ждём второй замер — рядом на здоровой коже, чтобы посчитать контраст.
+          </p>
+        </div>
       </div>
     );
   }
@@ -87,7 +123,6 @@ export function SpectralLive({ moleId }: { moleId: string }) {
         </div>
       </div>
 
-      {/* Отрисовка 10-канального спектрального графика */}
       {latest.channels && <SpectralChart channels={latest.channels} />}
     </div>
   );
