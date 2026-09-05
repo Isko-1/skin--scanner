@@ -29,9 +29,17 @@ export async function middleware(request: NextRequest) {
     }
   );
 
+  // getSession() reads the JWT from the cookie without making a network
+  // request — critical for Edge middleware where a Supabase round-trip
+  // easily exceeds Vercel's ~25ms middleware budget and causes 504s.
+  // getUser() (server-side token verification) is only needed in API routes
+  // and Server Components that actually read user data, not in the middleware
+  // whose only job is redirect-or-pass.
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const user = session?.user ?? null;
 
   const path = request.nextUrl.pathname;
   const isPublicPath = PUBLIC_PATHS.some((p) => path.startsWith(p));
@@ -64,6 +72,12 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Skip static assets and the favicon; run on everything else (pages + API routes).
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  matcher: [
+    // Skip static assets, favicon, AND all /api/ routes — those are protected
+    // individually (device Bearer secret or session check inside the route
+    // handler) and don't need the middleware redirect logic. Excluding them
+    // also eliminates any chance the middleware's cookie-refresh path blocks
+    // the ESP32 device requests that have no cookie at all.
+    "/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };
