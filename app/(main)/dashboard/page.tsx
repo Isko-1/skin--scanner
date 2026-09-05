@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { RiskGauge, riskLevel } from "@/components/risk-gauge";
 
@@ -7,9 +8,18 @@ const RISK_THRESHOLD = 0.3; // cases below this don't need a doctor's eyes
 export default async function DashboardPage() {
   const db = createClient();
 
-  // middleware.ts gates this whole route to app_metadata.doctor === true,
-  // and the "doctors see all ..." RLS policies in supabase/schema.sql grant
-  // this session read access across every user's data — no service key needed.
+  // Doctor check lives here now (middleware is zero-network, can't do it).
+  // getUser() is safe in a Server Component — no Edge time budget applies.
+  const {
+    data: { user },
+  } = await db.auth.getUser();
+
+  if (!user) redirect("/login?next=/dashboard");
+
+  const isDoctor =
+    (user.app_metadata as Record<string, unknown> | undefined)?.doctor === true;
+  if (!isDoctor) redirect("/");
+
   const { data: cases } = await db
     .from("photo_analyses")
     .select("id, mole_id, risk_score, created_at, moles(label, body_location, owner_id)")

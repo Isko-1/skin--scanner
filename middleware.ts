@@ -1,83 +1,55 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createServerClient } from "@supabase/ssr";
 
 const PUBLIC_PATHS = ["/login", "/register", "/auth/callback"];
 
-// Refreshes the Supabase session cookie on every request and gates access:
-// unauthenticated visitors get bounced to /login (this is what "add
-// registration/login" ultimately needs to mean — the old app had no
-// server-side check at all, see the removed NOTE comment in app/page.tsx),
-// and /dashboard additionally requires app_metadata.doctor === true, closing
-// the gap the README explicitly flagged as "add before shipping".
-export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({ request: { headers: request.headers } });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({ request: { headers: request.headers } });
-          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
-        },
-      },
-    }
-  );
-
-  // getSession() reads the JWT from the cookie without making a network
-  // request — critical for Edge middleware where a Supabase round-trip
-  // easily exceeds Vercel's ~25ms middleware budget and causes 504s.
-  // getUser() (server-side token verification) is only needed in API routes
-  // and Server Components that actually read user data, not in the middleware
-  // whose only job is redirect-or-pass.
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  const user = session?.user ?? null;
-
+// ZERO-NETWORK middleware — no Supabase SDK, no async calls, never times out.
+//
+// Why: @supabase/ssr's createServerClient + getSession/getUser can make HTTP
+// requests to Supabase (token refresh, JWKS fetch) that easily exceed Vercel
+// Edge middleware's budget, causing 504 MIDDLEWARE_INVOCATION_TIMEOUT.
+//
+// What we do instead: check for the Supabase auth cookie by name pattern.
+// The cookie name is "sb-<project-ref>-auth-token" — we look for any cookie
+// whose name contains "-auth-token" and has a non-empty value. This is a
+// presence check only (no JWT verification), which is all a redirect-gating
+// middleware needs. Actual auth + ownership verification happens inside each
+// Server Component (lib/supabase/server.ts → getUser()) and API route, where
+// there is no time budget and the full Supabase client is appropriate.
+//
+// /dashboard doctor-gating: moved into the dashboard page itself (server
+// component) — it can call getUser() freely without any timeout risk.
+export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isPublicPath = PUBLIC_PATHS.some((p) => path.startsWith(p));
 
-  if (!user && !isPublicPath) {
+  // Presence check: Supabase sets "sb-<ref>-auth-token" on sign-in.
+  const hasSession = request.cookies.getAll().some(
+    (c) => c.name.includes("-auth-token") && c.value.length > 10
+  );
+
+  if (!hasSession && !isPublicPath) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", path);
     return NextResponse.redirect(url);
   }
 
-  if (user && isPublicPath) {
+  if (hasSession && isPublicPath) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     url.search = "";
     return NextResponse.redirect(url);
   }
 
-  if (user && path.startsWith("/dashboard")) {
-    const isDoctor = (user.app_metadata as Record<string, unknown> | undefined)?.doctor === true;
-    if (!isDoctor) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/";
-      url.search = "";
-      return NextResponse.redirect(url);
-    }
-  }
-
-  return response;
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    // Skip static assets, favicon, AND all /api/ routes — those are protected
-    // individually (device Bearer secret or session check inside the route
-    // handler) and don't need the middleware redirect logic. Excluding them
-    // also eliminates any chance the middleware's cookie-refresh path blocks
-    // the ESP32 device requests that have no cookie at all.
+    // Exclude static assets, favicon, and /api/ routes.
+    // API routes are protected individually (Bearer secret or session check
+    // inside the handler) — running middleware on them would add latency for
+    // no benefit, and the device firmware has no cookies anyway.
     "/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

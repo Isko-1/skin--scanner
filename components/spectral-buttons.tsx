@@ -1,83 +1,104 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 type ReadingType = "lesion" | "reference";
+type BtnState = "idle" | "waiting" | "done" | "timeout";
 
-type StepState = "idle" | "pending" | "done" | "error";
-
-interface StepStatus {
-  lesion: StepState;
-  reference: StepState;
-}
+const WAIT_SECONDS = 30;
 
 interface Props {
   moleId: string;
-  /** If you want to link the manual reading to a photo analysis */
-  photoAnalysisId?: string;
 }
 
-// Placeholder channels — all zeros. Used when the user presses a button
-// WITHOUT a real device connected; the route still stores the reading and
-// triggers the pairing logic so the UX flow can be demonstrated end-to-end.
-// When a real probe is connected it sends its own POST to /api/spectral and
-// these manual buttons are just for demo / test use without the hardware.
-//
-// Replace zeros with real AS7341 data if you ever wire the browser buttons
-// directly to a Web Serial / Web Bluetooth readout.
-function placeholderChannels() {
-  return { f1: 0, f2: 0, f3: 0, f4: 0, f5: 0, f6: 0, f7: 0, f8: 0, clear: 0, nir: 0 };
-}
+export function SpectralButtons({ moleId }: Props) {
+  const [lesion, setLesion] = useState<BtnState>("idle");
+  const [reference, setReference] = useState<BtnState>("idle");
 
-async function postReading(
-  moleId: string,
-  readingType: ReadingType,
-  photoAnalysisId?: string
-): Promise<{ ok: boolean; error?: string }> {
-  try {
-    const res = await fetch("/api/spectral/manual", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        mole_id: moleId,
-        reading_type: readingType,
-        channels: placeholderChannels(),
-        ...(photoAnalysisId ? { photo_analysis_id: photoAnalysisId } : {}),
-      }),
-    });
+  // Refs to clearTimeout without stale closure issues
+  const lesionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const refTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      return { ok: false, error: data.error ?? `HTTP ${res.status}` };
-    }
-    return { ok: true };
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Ошибка сети" };
+  // Countdown display
+  const [lesionSec, setLesionSec] = useState(WAIT_SECONDS);
+  const [refSec, setRefSec] = useState(WAIT_SECONDS);
+  const lesionInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const refInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ── Realtime: watch for new readings from the probe ──────────────────────
+  useEffect(() => {
+    const supabase = createClient();
+
+    const channel = supabase
+      .channel(`spectral-buttons:${moleId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "spectral_readings",
+          filter: `mole_id=eq.${moleId}`,
+        },
+        (payload) => {
+          const row = payload.new as { reading_type: string };
+          if (row.reading_type === "lesion") markDone("lesion");
+          if (row.reading_type === "reference") markDone("reference");
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [moleId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function startWaiting(type: ReadingType) {
+    const set = type === "lesion" ? setLesion : setReference;
+    const setSec = type === "lesion" ? setLesionSec : setRefSec;
+    const timerRef = type === "lesion" ? lesionTimer : refTimer;
+    const intervalRef = type === "lesion" ? lesionInterval : refInterval;
+
+    // Clear any previous timers
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+
+    set("waiting");
+    setSec(WAIT_SECONDS);
+
+    // Countdown
+    let remaining = WAIT_SECONDS;
+    intervalRef.current = setInterval(() => {
+      remaining -= 1;
+      setSec(remaining);
+    }, 1000);
+
+    // Timeout fallback
+    timerRef.current = setTimeout(() => {
+      clearInterval(intervalRef.current!);
+      set("timeout");
+      // Reset to idle after 6s so user can retry
+      setTimeout(() => set("idle"), 6000);
+    }, WAIT_SECONDS * 1000);
   }
-}
 
-export function SpectralButtons({ moleId, photoAnalysisId }: Props) {
-  const [step, setStep] = useState<StepStatus>({ lesion: "idle", reference: "idle" });
-  const [error, setError] = useState<string | null>(null);
+  function markDone(type: ReadingType) {
+    const set = type === "lesion" ? setLesion : setReference;
+    const setSec = type === "lesion" ? setLesionSec : setRefSec;
+    const timerRef = type === "lesion" ? lesionTimer : refTimer;
+    const intervalRef = type === "lesion" ? lesionInterval : refInterval;
 
-  async function handlePress(type: ReadingType) {
-    setError(null);
-    setStep((s) => ({ ...s, [type]: "pending" }));
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (intervalRef.current) clearInterval(intervalRef.current);
 
-    const result = await postReading(moleId, type, photoAnalysisId);
+    set("done");
+    setSec(WAIT_SECONDS);
 
-    if (result.ok) {
-      setStep((s) => ({ ...s, [type]: "done" }));
-      // Reset back to idle after 4 s so button can be pressed again
-      setTimeout(() => setStep((s) => ({ ...s, [type]: "idle" })), 4000);
-    } else {
-      setStep((s) => ({ ...s, [type]: "error" }));
-      setError(result.error ?? "Неизвестная ошибка");
-      setTimeout(() => setStep((s) => ({ ...s, [type]: "idle" })), 4000);
-    }
+    // Auto-reset after 8s
+    setTimeout(() => set("idle"), 8000);
   }
 
-  const bothDone = step.lesion === "done" && step.reference === "done";
+  const bothDone = lesion === "done" && reference === "done";
 
   return (
     <div className="panel space-y-4 p-4">
@@ -90,20 +111,18 @@ export function SpectralButtons({ moleId, photoAnalysisId }: Props) {
           </svg>
         </span>
         <div>
-          <p className="text-sm font-semibold text-[var(--color-foreground)]">
-            Ручной ввод замеров
-          </p>
+          <p className="text-sm font-semibold text-[var(--color-foreground)]">Спектральный зонд</p>
           <p className="text-xs text-[var(--color-muted-foreground)]">
-            Нажмите кнопку после каждого замера зондом
+            Нажмите кнопку, затем приложите зонд — данные придут автоматически
           </p>
         </div>
       </div>
 
       {/* Step indicators */}
       <div className="flex items-center gap-2 text-xs text-[var(--color-muted-foreground)]">
-        <StepBadge label="1. Родинка" state={step.lesion} />
+        <StepBadge label="1. Родинка" state={lesion} />
         <div className="h-px flex-1 bg-[var(--color-border)]" />
-        <StepBadge label="2. Здоровая кожа" state={step.reference} />
+        <StepBadge label="2. Здоровая кожа" state={reference} />
       </div>
 
       {/* Buttons */}
@@ -111,56 +130,49 @@ export function SpectralButtons({ moleId, photoAnalysisId }: Props) {
         <ScanButton
           id="spectral-btn-lesion"
           label="Родинка"
-          description="Приложите зонд к родинке"
+          hint="Приложите зонд к родинке"
           icon={<MoleIcon />}
-          colorClass="bg-amber-500 hover:bg-amber-600 active:bg-amber-700"
-          glowClass="shadow-amber-200"
-          state={step.lesion}
-          disabled={step.lesion === "pending"}
-          onClick={() => handlePress("lesion")}
+          colorClass="bg-amber-500"
+          state={lesion}
+          seconds={lesionSec}
+          onClick={() => startWaiting("lesion")}
         />
         <ScanButton
           id="spectral-btn-reference"
           label="Здоровая кожа"
-          description="Приложите зонд рядом"
+          hint="Приложите зонд рядом"
           icon={<SkinIcon />}
-          colorClass="bg-[var(--color-primary)] hover:brightness-110 active:brightness-90"
-          glowClass="shadow-cyan-200"
-          state={step.reference}
-          disabled={step.reference === "pending"}
-          onClick={() => handlePress("reference")}
+          colorClass="bg-[var(--color-primary)]"
+          state={reference}
+          seconds={refSec}
+          onClick={() => startWaiting("reference")}
         />
       </div>
 
-      {/* Feedback */}
+      {/* Status banners */}
       {bothDone && (
-        <div className="flex items-center gap-2 rounded-xl bg-[var(--color-success)]/10 px-3 py-2 text-xs font-medium text-[var(--color-success)]">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-            <path d="M20 6 9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+        <Banner color="success" icon="✓">
           Оба замера получены — результат обновляется выше
-        </div>
+        </Banner>
       )}
-      {!bothDone && (step.lesion === "done" || step.reference === "done") && (
-        <div className="flex items-center gap-2 rounded-xl bg-[var(--color-warning)]/10 px-3 py-2 text-xs text-[var(--color-warning)]">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-            <circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16h.01" strokeLinecap="round" />
-          </svg>
-          {step.lesion === "done"
-            ? "Теперь приложите зонд к здоровой коже рядом с родинкой"
-            : "Теперь приложите зонд к родинке"}
-        </div>
+      {!bothDone && lesion === "done" && reference !== "done" && (
+        <Banner color="warning" icon="→">
+          Теперь приложите зонд к <strong>здоровой коже</strong> рядом с родинкой
+        </Banner>
       )}
-      {error && (
-        <div className="rounded-xl bg-[var(--color-destructive)]/10 px-3 py-2 text-xs text-[var(--color-destructive)]">
-          Ошибка: {error}
-        </div>
+      {!bothDone && reference === "done" && lesion !== "done" && (
+        <Banner color="warning" icon="→">
+          Теперь приложите зонд к <strong>родинке</strong>
+        </Banner>
+      )}
+      {(lesion === "timeout" || reference === "timeout") && (
+        <Banner color="error" icon="!">
+          Данные не пришли — убедитесь, что зонд подключён к Wi-Fi и направлен верно
+        </Banner>
       )}
 
-      {/* Hint */}
       <p className="text-[11px] leading-relaxed text-[var(--color-muted-foreground)]">
-        Сделайте оба замера в течение 5 минут — тогда они сопоставятся автоматически
-        и появится результат анализа.
+        Сделайте оба замера в течение 5 минут — тогда они сопоставятся и появится анализ
       </p>
     </div>
   );
@@ -168,91 +180,75 @@ export function SpectralButtons({ moleId, photoAnalysisId }: Props) {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function StepBadge({ label, state }: { label: string; state: StepState }) {
-  const colors: Record<StepState, string> = {
-    idle: "text-[var(--color-muted-foreground)]",
-    pending: "text-[var(--color-primary)] animate-pulse",
-    done: "text-[var(--color-success)] font-semibold",
-    error: "text-[var(--color-destructive)]",
+function StepBadge({ label, state }: { label: string; state: BtnState }) {
+  const map: Record<BtnState, { color: string; icon: string }> = {
+    idle:    { color: "text-[var(--color-muted-foreground)]", icon: "○" },
+    waiting: { color: "text-[var(--color-primary)] animate-pulse", icon: "◌" },
+    done:    { color: "text-[var(--color-success)] font-semibold", icon: "✓" },
+    timeout: { color: "text-[var(--color-destructive)]", icon: "✕" },
   };
-  const icons: Record<StepState, string> = {
-    idle: "○",
-    pending: "◌",
-    done: "✓",
-    error: "✕",
-  };
+  const { color, icon } = map[state];
   return (
-    <span className={`flex items-center gap-1 ${colors[state]}`}>
-      <span aria-hidden="true">{icons[state]}</span>
+    <span className={`flex items-center gap-1 text-xs ${color}`}>
+      <span aria-hidden="true">{icon}</span>
       {label}
     </span>
   );
 }
 
-interface ScanButtonProps {
+function ScanButton({
+  id, label, hint, icon, colorClass, state, seconds, onClick,
+}: {
   id: string;
   label: string;
-  description: string;
+  hint: string;
   icon: React.ReactNode;
   colorClass: string;
-  glowClass: string;
-  state: StepState;
-  disabled: boolean;
+  state: BtnState;
+  seconds: number;
   onClick: () => void;
-}
-
-function ScanButton({
-  id,
-  label,
-  description,
-  icon,
-  colorClass,
-  glowClass,
-  state,
-  disabled,
-  onClick,
-}: ScanButtonProps) {
-  const isPending = state === "pending";
-  const isDone = state === "done";
-  const isError = state === "error";
+}) {
+  const isWaiting = state === "waiting";
+  const isDone    = state === "done";
+  const isTimeout = state === "timeout";
+  const disabled  = isWaiting || isDone;
 
   return (
     <button
       id={id}
       onClick={onClick}
       disabled={disabled}
-      aria-label={`${label} — ${description}`}
+      aria-label={`${label} — ${hint}`}
       className={[
-        "relative flex flex-col items-center gap-2 rounded-2xl px-3 py-4 text-white transition-all duration-200",
+        "relative flex flex-col items-center gap-2 overflow-hidden rounded-2xl px-3 py-4 text-white transition-all duration-200 select-none",
         colorClass,
-        isDone ? "ring-2 ring-[var(--color-success)] ring-offset-1" : "",
-        isError ? "ring-2 ring-[var(--color-destructive)] ring-offset-1" : "",
-        disabled ? "cursor-wait opacity-70" : "cursor-pointer",
-        !disabled ? `shadow-lg ${glowClass}` : "",
-      ]
-        .filter(Boolean)
-        .join(" ")}
+        isDone    ? "ring-2 ring-[var(--color-success)] ring-offset-1 opacity-90" : "",
+        isTimeout ? "opacity-60" : "",
+        disabled  ? "cursor-default" : "cursor-pointer hover:brightness-110 active:scale-95 shadow-lg",
+      ].filter(Boolean).join(" ")}
     >
-      {/* Icon / spinner / checkmark */}
+      {/* Countdown fill bar */}
+      {isWaiting && (
+        <span
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-1 bg-white/40 transition-all"
+          style={{ width: `${(seconds / WAIT_SECONDS) * 100}%` }}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Icon area */}
       <span className="relative flex h-10 w-10 items-center justify-center">
-        {isPending ? (
-          <svg
-            className="h-7 w-7 animate-spin"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden="true"
-          >
+        {isWaiting ? (
+          <svg className="h-7 w-7 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
           </svg>
         ) : isDone ? (
           <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
             <path d="M20 6 9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-        ) : isError ? (
+        ) : isTimeout ? (
           <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-            <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" />
+            <circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16h.01" strokeLinecap="round" />
           </svg>
         ) : (
           icon
@@ -260,13 +256,33 @@ function ScanButton({
       </span>
 
       <span className="text-sm font-semibold leading-tight">{label}</span>
-      <span className="text-[11px] font-normal leading-tight opacity-80">{description}</span>
+      <span className="text-[11px] font-normal leading-tight opacity-80">
+        {isWaiting ? `Ждём… ${seconds}с` : isTimeout ? "Не пришло" : isDone ? "Получено ✓" : hint}
+      </span>
 
-      {/* Pulse ring on pending */}
-      {isPending && (
-        <span className="absolute inset-0 rounded-2xl ring-2 ring-white/40 animate-ping" aria-hidden="true" />
+      {/* Pulse ring while waiting */}
+      {isWaiting && (
+        <span className="absolute inset-0 rounded-2xl animate-ping ring-2 ring-white/30" aria-hidden="true" />
       )}
     </button>
+  );
+}
+
+function Banner({ color, icon, children }: {
+  color: "success" | "warning" | "error";
+  icon: string;
+  children: React.ReactNode;
+}) {
+  const styles = {
+    success: "bg-[var(--color-success)]/10 text-[var(--color-success)]",
+    warning: "bg-[var(--color-warning)]/10 text-[var(--color-warning)]",
+    error:   "bg-[var(--color-destructive)]/10 text-[var(--color-destructive)]",
+  };
+  return (
+    <div className={`flex items-start gap-2 rounded-xl px-3 py-2 text-xs ${styles[color]}`}>
+      <span aria-hidden="true" className="mt-0.5 shrink-0">{icon}</span>
+      <span>{children}</span>
+    </div>
   );
 }
 
