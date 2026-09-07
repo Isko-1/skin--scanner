@@ -50,6 +50,13 @@ export default function CapturePage({ searchParams }: { searchParams: CaptureSea
   const [cameraReady, setCameraReady] = useState(false);
   const [flash, setFlash] = useState(false);
   const [focusing, setFocusing] = useState(false);
+  // Torch (flashlight) support is inconsistent across browsers — Chrome on
+  // Android exposes it via track capabilities, Safari on iPhone doesn't
+  // expose a torch control to web pages at all. torchSupported gates
+  // whether the button even renders, so people on unsupported browsers
+  // don't see a button that can't do anything.
+  const [torchSupported, setTorchSupported] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
   const [uploadStage, setUploadStage] = useState<UploadStage>(null);
   // Set once storage upload succeeds, so a retry after a classify failure
   // resumes from "analyze" instead of re-uploading the same photo again.
@@ -86,6 +93,21 @@ export default function CapturePage({ searchParams }: { searchParams: CaptureSea
     }, 700);
   }
 
+  // Best-effort, same pattern as applyFocusMode — torch isn't in every
+  // browser's MediaTrackCapabilities, so absence just means the button
+  // never renders rather than throwing.
+  async function toggleTorch() {
+    const track = streamRef.current?.getVideoTracks()[0];
+    if (!track) return;
+    try {
+      await track.applyConstraints({ advanced: [{ torch: !torchOn } as MediaTrackConstraintSet] });
+      setTorchOn(!torchOn);
+    } catch {
+      // Some browsers report torch in capabilities but still reject the
+      // constraint at runtime — fail silently, button just stays as-is.
+    }
+  }
+
   async function requestCamera() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -104,6 +126,12 @@ export default function CapturePage({ searchParams }: { searchParams: CaptureSea
       streamRef.current = stream;
       if (videoRef.current) videoRef.current.srcObject = stream;
       await applyFocusMode("continuous");
+
+      const track = stream.getVideoTracks()[0];
+      const capabilities = track.getCapabilities?.() as (MediaTrackCapabilities & { torch?: boolean }) | undefined;
+      setTorchSupported(Boolean(capabilities?.torch));
+      setTorchOn(false);
+
       setErrorMsg(null);
       setErrorStage(null);
       setPhase("camera");
@@ -127,6 +155,14 @@ export default function CapturePage({ searchParams }: { searchParams: CaptureSea
     requestCamera();
     return () => {
       mountedRef.current = false;
+      // Turn the torch off before the track stops — leaving it in an "on"
+      // constraint and just dropping the track can leave some Android
+      // camera stacks reporting the flashlight as still active until the
+      // next app that touches the camera resets it.
+      const track = streamRef.current?.getVideoTracks()[0];
+      if (track) {
+        track.applyConstraints({ advanced: [{ torch: false } as MediaTrackConstraintSet] }).catch(() => {});
+      }
       streamRef.current?.getTracks().forEach((t) => t.stop());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -333,6 +369,20 @@ export default function CapturePage({ searchParams }: { searchParams: CaptureSea
           СЪЁМКА РОДИНКИ
           {label && <span className="ml-2 normal-case text-neutral-300">· {label}</span>}
         </h1>
+        {phase === "camera" && torchSupported && (
+          <button
+            onClick={toggleTorch}
+            aria-label={torchOn ? "Выключить фонарик" : "Включить фонарик"}
+            aria-pressed={torchOn}
+            className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
+              torchOn ? "bg-cyan-500 text-neutral-950" : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100"
+            }`}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill={torchOn ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+              <path d="M9 2h6l-1 7h3l-8 13 2-9H8z" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        )}
       </header>
 
       <div className="relative flex-1 overflow-hidden bg-black">
