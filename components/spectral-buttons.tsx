@@ -274,12 +274,12 @@ function Banner({ color, icon, children }: {
   children: React.ReactNode;
 }) {
   const styles = {
-    success: "bg-[var(--color-success)]/10 text-[var(--color-success)]",
-    warning: "bg-[var(--color-warning)]/10 text-[var(--color-warning)]",
-    error:   "bg-[var(--color-destructive)]/10 text-[var(--color-destructive)]",
+    success: "bg-emerald-50 text-emerald-800 border border-emerald-200",
+    warning: "bg-amber-50 text-amber-800 border border-amber-200",
+    error:   "bg-rose-50 text-rose-800 border border-rose-200",
   };
   return (
-    <div className={`flex items-start gap-2 rounded-xl px-3 py-2 text-xs ${styles[color]}`}>
+    <div className={`flex items-start gap-2 rounded-xl px-3 py-2 text-xs border ${styles[color]}`}>
       <span aria-hidden="true" className="mt-0.5 shrink-0">{icon}</span>
       <span>{children}</span>
     </div>

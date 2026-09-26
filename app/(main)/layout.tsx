@@ -13,7 +13,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
       {user && (
-        <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[#0b0f17]/90 backdrop-blur-md">
+        <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur-md shadow-xs">
           <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
             {/* Brand Logo */}
             <Link
@@ -21,7 +21,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
               className="flex items-center gap-2.5 transition-opacity hover:opacity-90"
               aria-label="Skin Scanner — Главная"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-600 text-white shadow-sm">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-600 text-white shadow-xs">
                 <svg
                   width="18"
                   height="18"
@@ -39,10 +39,10 @@ export default async function MainLayout({ children }: { children: React.ReactNo
                 </svg>
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-semibold tracking-tight text-slate-100">
+                <span className="text-sm font-semibold tracking-tight text-slate-900">
                   SkinScanner
                 </span>
-                <span className="text-[10px] font-medium text-slate-400">
+                <span className="text-[10px] font-medium text-slate-500">
                   Клинический контроль
                 </span>
               </div>
@@ -53,14 +53,14 @@ export default async function MainLayout({ children }: { children: React.ReactNo
               <nav className="flex items-center gap-1.5">
                 <Link
                   href="/"
-                  className="rounded-md px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+                  className="rounded-md px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-100 hover:text-slate-900"
                 >
                   Родинки
                 </Link>
                 {isDoctor && (
                   <Link
                     href="/dashboard"
-                    className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-amber-300 transition hover:bg-amber-950/40"
+                    className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 transition hover:bg-amber-100"
                   >
                     <svg
                       width="13"
@@ -80,13 +80,13 @@ export default async function MainLayout({ children }: { children: React.ReactNo
                 )}
               </nav>
 
-              <div className="h-4 w-px bg-slate-800" />
+              <div className="h-4 w-px bg-slate-200" />
 
               {/* User Pill & Logout */}
               <div className="flex items-center gap-2">
                 <span
                   title={user.email ?? ""}
-                  className="hidden max-w-[130px] truncate text-xs text-slate-400 sm:inline-block"
+                  className="hidden max-w-[130px] truncate text-xs text-slate-500 sm:inline-block"
                 >
                   {user.email}
                 </span>
@@ -94,7 +94,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
                 <form action="/logout" method="post">
                   <button
                     type="submit"
-                    className="rounded-md border border-slate-700/60 bg-slate-800/80 px-2.5 py-1.2 text-xs font-medium text-slate-300 transition hover:border-slate-600 hover:bg-slate-700 hover:text-white"
+                    className="btn-ghost py-1 px-2.5 text-xs"
                   >
                     Выйти
                   </button>

@@ -1,60 +1,61 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════════════════════════
-   SKIN SCANNER — Clinical Dermatological Design System
-   Professional, reliable, human-designed medical UI.
-   No gimmicky neon gradients, glowing blobs, or AI templates.
+   SKIN SCANNER — Light Clinical Healthcare Design System
+   Inspired by Apple Health, Miiskin, SkinVision and modern
+   clinical medical applications.
+   Crisp white surfaces, clean slate typography, clinical blue accents.
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Medical clinical palette */
+  /* Medical Clinical Primary */
   --color-primary:          #0284c7;
   --color-primary-hover:    #0369a1;
-  --color-primary-light:    #38bdf8;
+  --color-primary-light:    #e0f2fe;
   --color-on-primary:       #ffffff;
 
-  --color-secondary:        #64748b;
-  --color-accent:           #0f766e;
-  --color-accent-light:     #14b8a6;
+  --color-secondary:        #475569;
+  --color-accent:           #0d9488;
+  --color-accent-light:     #ccfbf1;
 
-  /* Surfaces & canvas */
-  --color-background:       #0b0f17;
-  --color-surface:          #111827;
-  --color-surface-2:        #172033;
-  --color-surface-3:        #1e293b;
+  /* Surfaces & Canvas (Light Medical) */
+  --color-background:       #f8fafc;
+  --color-surface:          #ffffff;
+  --color-surface-2:        #f1f5f9;
+  --color-surface-3:        #e2e8f0;
 
   /* Typography */
-  --color-foreground:       #f8fafc;
-  --color-foreground-2:     #94a3b8;
-  --color-foreground-3:     #64748b;
+  --color-foreground:       #0f172a;
+  --color-foreground-2:     #475569;
+  --color-foreground-3:     #94a3b8;
 
-  /* Semantic aliases */
+  /* Semantic Aliases */
   --color-card:             var(--color-surface);
   --color-muted:            var(--color-surface-2);
   --color-muted-foreground: var(--color-foreground-2);
 
-  /* Precise 1px borders */
-  --color-border:           rgba(255, 255, 255, 0.08);
-  --color-border-subtle:    rgba(255, 255, 255, 0.04);
-  --color-border-focus:     #38bdf8;
+  /* Precise 1px Borders */
+  --color-border:           #e2e8f0;
+  --color-border-subtle:    #f1f5f9;
+  --color-border-focus:     #0284c7;
 
-  /* Clinical diagnostics */
-  --color-destructive:      #f43f5e;
-  --color-warning:          #f59e0b;
-  --color-success:          #10b981;
+  /* Clinical Diagnostics */
+  --color-destructive:      #e11d48;
+  --color-warning:          #d97706;
+  --color-success:          #16a34a;
   --color-ring:             #0284c7;
 
-  /* Purposeful, clean shadows */
+  /* Soft Natural Shadows */
   --shadow-panel:
-    0 1px 3px rgba(0, 0, 0, 0.3),
-    0 4px 12px rgba(0, 0, 0, 0.25);
+    0 1px 3px 0 rgba(0, 0, 0, 0.05),
+    0 1px 2px -1px rgba(0, 0, 0, 0.03);
   --shadow-elevated:
-    0 4px 20px rgba(0, 0, 0, 0.4),
-    0 1px 2px rgba(0, 0, 0, 0.2);
+    0 10px 25px -5px rgba(0, 0, 0, 0.08),
+    0 8px 10px -6px rgba(0, 0, 0, 0.04);
 }
 
 /* ── Base ──────────────────────────────────────────────────────── */
@@ -70,9 +71,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Component layer ───────────────────────────────────────────── */
+/* ── Component Layer ───────────────────────────────────────────── */
 @layer components {
-  /* Clinical surface panel */
+  /* Crisp Medical Card */
   .panel {
     background-color: var(--color-surface);
     border: 1px solid var(--color-border);
@@ -80,25 +81,25 @@ body {
     box-shadow: var(--shadow-panel);
   }
 
-  /* Elevated panel for modals & popovers */
+  /* Elevated Modal / Popover */
   .panel-elevated {
-    background-color: var(--color-surface-2);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 1rem;
     box-shadow: var(--shadow-elevated);
   }
 
-  /* Interactive card hover */
+  /* Interactive Card Hover */
   .panel-interactive {
-    transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.15s ease;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
   }
   .panel-interactive:hover {
-    border-color: rgba(56, 189, 248, 0.35);
-    background-color: #141d2e;
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.06);
     transform: translateY(-1px);
   }
 
-  /* Primary action button */
+  /* Primary Action Button (Medical Blue) */
   .btn-primary {
     display: inline-flex;
     align-items: center;
@@ -113,8 +114,9 @@ body {
     font-weight: 500;
     transition: background-color 0.15s ease, transform 0.1s ease;
     cursor: pointer;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: none;
     text-decoration: none;
+    box-shadow: 0 1px 2px 0 rgba(2, 132, 199, 0.2);
   }
   .btn-primary:hover {
     background-color: var(--color-primary-hover);
@@ -126,9 +128,10 @@ body {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
+    box-shadow: none;
   }
 
-  /* Accent action button (teal/green) */
+  /* Accent Action Button */
   .btn-accent {
     display: inline-flex;
     align-items: center;
@@ -143,7 +146,7 @@ body {
     font-weight: 500;
     transition: background-color 0.15s ease, transform 0.1s ease;
     cursor: pointer;
-    border: 1px solid rgba(20, 184, 166, 0.25);
+    border: none;
     text-decoration: none;
   }
   .btn-accent:hover {
@@ -157,7 +160,7 @@ body {
     cursor: not-allowed;
   }
 
-  /* Ghost/Secondary button */
+  /* Ghost/Secondary Button (White Card Style) */
   .btn-ghost {
     display: inline-flex;
     align-items: center;
@@ -166,34 +169,36 @@ body {
     min-height: 2.5rem;
     padding: 0 1rem;
     border-radius: 0.625rem;
-    background-color: rgba(255, 255, 255, 0.04);
+    background-color: #ffffff;
     border: 1px solid var(--color-border);
-    color: var(--color-foreground);
+    color: var(--color-foreground-2);
     font-size: 0.875rem;
     font-weight: 500;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
     cursor: pointer;
     text-decoration: none;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
   }
   .btn-ghost:hover {
-    background-color: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.16);
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+    color: var(--color-foreground);
   }
   .btn-ghost:active {
     transform: scale(0.98);
   }
   .btn-ghost:disabled {
-    opacity: 0.4;
+    opacity: 0.5;
     cursor: not-allowed;
   }
 
-  /* Clean, crisp input field */
+  /* Crisp Input Field */
   .input-field {
     min-height: 2.5rem;
     width: 100%;
     padding: 0 0.875rem;
     border-radius: 0.625rem;
-    background-color: #0d131f;
+    background-color: #ffffff;
     border: 1px solid var(--color-border);
     color: var(--color-foreground);
     font-size: 0.9375rem;
@@ -205,36 +210,36 @@ body {
     color: var(--color-foreground-3);
   }
   .input-field:focus {
-    border-color: var(--color-primary-light);
-    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.15);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
   }
   .input-field:hover:not(:focus) {
-    border-color: rgba(255, 255, 255, 0.15);
+    border-color: #cbd5e1;
   }
 
-  /* Status Badges */
+  /* Clinical Risk Badges (Soft Pastel) */
   .risk-badge-high {
-    background-color: rgba(244, 63, 94, 0.12);
-    color: #f43f5e;
-    border: 1px solid rgba(244, 63, 94, 0.25);
+    background-color: #fff1f2;
+    color: #be123c;
+    border: 1px solid #fecdd3;
     padding: 0.15rem 0.5rem;
     border-radius: 9999px;
     font-size: 0.75rem;
     font-weight: 600;
   }
   .risk-badge-medium {
-    background-color: rgba(245, 158, 11, 0.12);
-    color: #f59e0b;
-    border: 1px solid rgba(245, 158, 11, 0.25);
+    background-color: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fde68a;
     padding: 0.15rem 0.5rem;
     border-radius: 9999px;
     font-size: 0.75rem;
     font-weight: 600;
   }
   .risk-badge-low {
-    background-color: rgba(16, 185, 129, 0.12);
-    color: #10b981;
-    border: 1px solid rgba(16, 185, 129, 0.25);
+    background-color: #f0fdf4;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
     padding: 0.15rem 0.5rem;
     border-radius: 9999px;
     font-size: 0.75rem;
@@ -251,17 +256,17 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(148, 163, 184, 0.4);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(148, 163, 184, 0.6);
 }
 
 /* ── Selection ─────────────────────────────────────────────────── */
 ::selection {
-  background: rgba(56, 189, 248, 0.25);
-  color: #ffffff;
+  background: rgba(2, 132, 199, 0.18);
+  color: #0369a1;
 }
 
 /* ── Reduced motion ────────────────────────────────────────────── */

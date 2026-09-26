@@ -70,17 +70,17 @@ export default function RegisterPage() {
 
   if (checkEmail) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center px-4 text-center">
-        <div className="panel w-full max-w-sm p-6 sm:p-8">
-          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-sky-950/60 text-sky-400 border border-sky-800/40">
+      <main className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 text-center">
+        <div className="panel w-full max-w-sm p-6 sm:p-8 shadow-sm">
+          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-700 border border-sky-200">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
               <polyline points="22,6 12,13 2,6" />
             </svg>
           </div>
-          <h2 className="text-base font-bold text-slate-100">Подтвердите адрес почты</h2>
-          <p className="mt-2 text-xs text-slate-400">
-            Мы отправили ссылку для активации аккаунта на <strong className="text-slate-200">{email}</strong>.
+          <h2 className="text-base font-bold text-slate-900">Подтвердите адрес почты</h2>
+          <p className="mt-2 text-xs text-slate-500">
+            Мы отправили ссылку для активации аккаунта на <strong className="text-slate-800">{email}</strong>.
             Перейдите по ней для входа в систему.
           </p>
           <Link href="/login" className="btn-primary mt-5 inline-flex w-full text-xs">
@@ -92,11 +92,11 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
-      <div className="panel w-full max-w-sm p-6 sm:p-8">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-12">
+      <div className="panel w-full max-w-sm p-6 sm:p-8 shadow-sm">
         {/* Header */}
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white shadow-sm">
+          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white shadow-xs">
             <svg
               width="20"
               height="20"
@@ -113,10 +113,10 @@ export default function RegisterPage() {
               <circle cx="12" cy="12" r="3" />
             </svg>
           </div>
-          <h1 className="text-lg font-bold text-slate-100">
+          <h1 className="text-lg font-bold text-slate-900">
             Регистрация пациента
           </h1>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-slate-500">
             Создайте защищённый аккаунт для наблюдения за кожей
           </p>
         </div>
@@ -151,15 +151,15 @@ export default function RegisterPage() {
 
         {/* Divider */}
         <div className="mb-5 flex items-center gap-3">
-          <div className="h-px flex-1 bg-slate-800" />
-          <span className="text-[11px] text-slate-500">или заполните форму</span>
-          <div className="h-px flex-1 bg-slate-800" />
+          <div className="h-px flex-1 bg-slate-200" />
+          <span className="text-[11px] text-slate-400">или заполните форму</span>
+          <div className="h-px flex-1 bg-slate-200" />
         </div>
 
         {/* Form */}
         <form onSubmit={submit} className="flex flex-col gap-3">
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-slate-300">Email</span>
+            <span className="text-xs font-medium text-slate-700">Email</span>
             <input
               type="email"
               required
@@ -172,7 +172,7 @@ export default function RegisterPage() {
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-slate-300">Пароль</span>
+            <span className="text-xs font-medium text-slate-700">Пароль</span>
             <input
               type="password"
               required
@@ -185,7 +185,7 @@ export default function RegisterPage() {
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-slate-300">Повторите пароль</span>
+            <span className="text-xs font-medium text-slate-700">Повторите пароль</span>
             <input
               type="password"
               required
@@ -198,7 +198,7 @@ export default function RegisterPage() {
           </label>
 
           {error && (
-            <div className="flex items-start gap-2 rounded-lg border border-rose-900/50 bg-rose-950/30 p-2.5 text-xs text-rose-300">
+            <div className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-700">
               <svg
                 width="14"
                 height="14"
@@ -226,12 +226,12 @@ export default function RegisterPage() {
         </form>
 
         {/* Footer */}
-        <div className="mt-5 border-t border-slate-800/80 pt-4 text-center">
-          <p className="text-xs text-slate-400">
+        <div className="mt-5 border-t border-slate-100 pt-4 text-center">
+          <p className="text-xs text-slate-500">
             Уже есть аккаунт?{" "}
             <Link
               href="/login"
-              className="font-medium text-sky-400 hover:underline"
+              className="font-medium text-sky-600 hover:underline"
             >
               Войти
             </Link>

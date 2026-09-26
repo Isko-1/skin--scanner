@@ -62,11 +62,11 @@ function LoginForm() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
-      <div className="panel w-full max-w-sm p-6 sm:p-8">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-12">
+      <div className="panel w-full max-w-sm p-6 sm:p-8 shadow-sm">
         {/* Header */}
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white shadow-sm">
+          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white shadow-xs">
             <svg
               width="20"
               height="20"
@@ -83,10 +83,10 @@ function LoginForm() {
               <circle cx="12" cy="12" r="3" />
             </svg>
           </div>
-          <h1 className="text-lg font-bold text-slate-100">
+          <h1 className="text-lg font-bold text-slate-900">
             SkinScanner
           </h1>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-slate-500">
             Вход в систему персонального мониторинга родинок
           </p>
         </div>
@@ -122,15 +122,15 @@ function LoginForm() {
 
         {/* Divider */}
         <div className="mb-5 flex items-center gap-3">
-          <div className="h-px flex-1 bg-slate-800" />
-          <span className="text-[11px] text-slate-500">или с паролем</span>
-          <div className="h-px flex-1 bg-slate-800" />
+          <div className="h-px flex-1 bg-slate-200" />
+          <span className="text-[11px] text-slate-400">или с паролем</span>
+          <div className="h-px flex-1 bg-slate-200" />
         </div>
 
         {/* Email Form */}
         <form onSubmit={submit} className="flex flex-col gap-3.5">
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-slate-300">Email</span>
+            <span className="text-xs font-medium text-slate-700">Email</span>
             <input
               id="login-email"
               type="email"
@@ -144,7 +144,7 @@ function LoginForm() {
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-slate-300">Пароль</span>
+            <span className="text-xs font-medium text-slate-700">Пароль</span>
             <input
               id="login-password"
               type="password"
@@ -158,7 +158,7 @@ function LoginForm() {
           </label>
 
           {error && (
-            <div className="flex items-start gap-2 rounded-lg border border-rose-900/50 bg-rose-950/30 p-2.5 text-xs text-rose-300">
+            <div className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-700">
               <svg
                 width="14"
                 height="14"
@@ -187,12 +187,12 @@ function LoginForm() {
         </form>
 
         {/* Footer */}
-        <div className="mt-5 border-t border-slate-800/80 pt-4 text-center">
-          <p className="text-xs text-slate-400">
+        <div className="mt-5 border-t border-slate-100 pt-4 text-center">
+          <p className="text-xs text-slate-500">
             Нет аккаунта?{" "}
             <Link
               href="/register"
-              className="font-medium text-sky-400 hover:underline"
+              className="font-medium text-sky-600 hover:underline"
             >
               Зарегистрироваться
             </Link>
@@ -200,7 +200,7 @@ function LoginForm() {
         </div>
       </div>
 
-      <p className="mt-6 max-w-xs text-center text-[11px] text-slate-500">
+      <p className="mt-6 max-w-xs text-center text-[11px] text-slate-400">
         Медицинские данные и снимки защищены сквозным шифрованием и политиками RLS.
       </p>
     </main>

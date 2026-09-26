@@ -32,16 +32,16 @@ export default async function DashboardPage() {
       <header className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-50 text-amber-700 border border-amber-200">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
               </svg>
             </span>
-            <h1 className="text-xl font-bold tracking-tight text-slate-100">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">
               Клинический регистр: случаи требующие внимания
             </h1>
           </div>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-slate-500">
             Случаи с индексом риска ≥ {Math.round(RISK_THRESHOLD * 100)}% · Всего записей: {cases?.length ?? 0}
           </p>
         </div>
@@ -54,16 +54,16 @@ export default async function DashboardPage() {
       {/* Empty state */}
       {!cases?.length ? (
         <div className="panel flex flex-col items-center gap-3 p-12 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-emerald-800/40 bg-emerald-950/20 text-emerald-400">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-600">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M20 6L9 17l-5-5" />
             </svg>
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-200">
+            <p className="text-sm font-semibold text-slate-900">
               Нет критических случаев
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-slate-500">
               В текущей выборке отсутствуют сканы с риском выше {Math.round(RISK_THRESHOLD * 100)}%.
             </p>
           </div>
@@ -84,23 +84,23 @@ export default async function DashboardPage() {
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="truncate text-sm font-semibold text-slate-100">
+                        <span className="truncate text-sm font-semibold text-slate-900">
                           {c.moles?.label ?? c.mole_id}
                         </span>
                         <span
                           className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
                             level === "high"
-                              ? "bg-rose-950/80 text-rose-300 border border-rose-800/60"
-                              : "bg-amber-950/80 text-amber-300 border border-amber-800/60"
+                              ? "bg-rose-50 text-rose-700 border border-rose-200"
+                              : "bg-amber-50 text-amber-700 border border-amber-200"
                           }`}
                         >
                           {label}
                         </span>
                       </div>
-                      <p className="mt-0.5 text-xs text-slate-400">
+                      <p className="mt-0.5 text-xs text-slate-500">
                         {c.moles?.body_location || "Локализация не указана"}
                       </p>
-                      <span className="mt-1 block text-[11px] text-slate-500">
+                      <span className="mt-1 block text-[11px] text-slate-400">
                         {new Date(c.created_at).toLocaleDateString("ru-RU", {
                           day: "numeric",
                           month: "short",
@@ -111,11 +111,11 @@ export default async function DashboardPage() {
 
                     <div className="flex shrink-0 items-center gap-3">
                       <div className="text-right">
-                        <span className="font-mono text-sm font-bold text-slate-100">
+                        <span className="font-mono text-sm font-bold text-slate-900">
                           {Math.round(risk * 100)}%
                         </span>
                       </div>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-500">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-400">
                         <path d="M9 18l6-6-6-6" />
                       </svg>
                     </div>
@@ -128,7 +128,7 @@ export default async function DashboardPage() {
           {/* Desktop: table */}
           <div className="panel hidden overflow-hidden md:block">
             <table className="w-full text-left text-xs">
-              <thead className="border-b border-slate-800 bg-slate-900/60 text-slate-400">
+              <thead className="border-b border-slate-200 bg-slate-50 text-slate-600">
                 <tr>
                   <th className="px-4 py-3 font-semibold uppercase tracking-wider">Родинка</th>
                   <th className="px-4 py-3 font-semibold uppercase tracking-wider">Локализация</th>
@@ -137,41 +137,41 @@ export default async function DashboardPage() {
                   <th className="px-4 py-3 text-right font-semibold uppercase tracking-wider">Действие</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-100">
                 {cases.map((c: any) => {
                   const risk = Number(c.risk_score);
                   const { label, level } = riskLevel(c.risk_score);
 
                   return (
-                    <tr key={c.id} className="transition hover:bg-slate-800/30">
-                      <td className="px-4 py-3.5 font-medium text-slate-200">
+                    <tr key={c.id} className="transition hover:bg-slate-50/80">
+                      <td className="px-4 py-3.5 font-medium text-slate-900">
                         <Link
                           href={`/mole/${c.mole_id}`}
-                          className="font-semibold text-sky-400 hover:underline"
+                          className="font-semibold text-sky-700 hover:underline"
                         >
                           {c.moles?.label ?? c.mole_id}
                         </Link>
                       </td>
-                      <td className="px-4 py-3.5 text-slate-400">
+                      <td className="px-4 py-3.5 text-slate-600">
                         {c.moles?.body_location ?? "—"}
                       </td>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono font-bold text-slate-200">
+                          <span className="font-mono font-bold text-slate-900">
                             {Math.round(risk * 100)}%
                           </span>
                           <span
                             className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                               level === "high"
-                                ? "bg-rose-950/80 text-rose-300 border border-rose-800/60"
-                                : "bg-amber-950/80 text-amber-300 border border-amber-800/60"
+                                ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                : "bg-amber-50 text-amber-700 border border-amber-200"
                             }`}
                           >
                             {label}
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3.5 text-slate-400">
+                      <td className="px-4 py-3.5 text-slate-500">
                         {new Date(c.created_at).toLocaleDateString("ru-RU", {
                           day: "numeric",
                           month: "short",

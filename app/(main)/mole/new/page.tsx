@@ -36,7 +36,7 @@ export default function NewMolePage() {
       <div className="mb-6 flex items-center gap-3">
         <Link
           href="/"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-400 transition hover:border-slate-700 hover:text-white"
+          className="btn-ghost flex h-9 w-9 p-0 items-center justify-center rounded-lg"
           aria-label="Назад к списку"
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -44,19 +44,19 @@ export default function NewMolePage() {
           </svg>
         </Link>
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-100">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900">
             Регистрация родинки
           </h1>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500">
             Укажите ориентир и перейдите к оптической съёмке
           </p>
         </div>
       </div>
 
-      <div className="panel space-y-5 p-6">
+      <div className="panel space-y-5 p-6 shadow-sm">
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-semibold text-slate-300">
-            Название или ориентир <span className="text-rose-400">*</span>
+          <span className="text-xs font-semibold text-slate-700">
+            Название или ориентир <span className="text-rose-500">*</span>
           </span>
           <input
             value={label}
@@ -71,13 +71,13 @@ export default function NewMolePage() {
         </label>
 
         {isDuplicate && (
-          <div className="rounded-lg border border-amber-900/40 bg-amber-950/20 p-2.5 text-xs text-amber-300">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800">
             Образование с похожим названием уже есть в вашем списке. Вы можете продолжить, но рекомендуем уточнить место.
           </div>
         )}
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-semibold text-slate-300">
+          <span className="text-xs font-semibold text-slate-700">
             Анатомическая область (необязательно)
           </span>
           <input
@@ -89,9 +89,9 @@ export default function NewMolePage() {
           />
         </label>
 
-        <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-3 text-xs text-slate-400">
-          <span className="font-semibold text-slate-300">Что произойдёт дальше:</span>
-          <p className="mt-0.5 text-slate-400">
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+          <span className="font-semibold text-slate-800">Что произойдёт дальше:</span>
+          <p className="mt-0.5 text-slate-600">
             Откроется камера с детектором резкости и площади кожи. После фиксации чёткого кадра снимок привяжется к этой родинке.
           </p>
         </div>

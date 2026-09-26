@@ -90,14 +90,14 @@ export function MoleListInteractive({ moles, thumbnails }: MoleListInteractivePr
       {/* Header with Title & Action */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-100">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             Мои родинки
           </h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-slate-500">
             {moles.length
               ? `${moles.length} ${
                   moles.length === 1 ? "объект" : moles.length < 5 ? "объекта" : "объектов"
-                } в персональном регистре`
+                } в регистре клинического наблюдения`
               : "Регистр пуст — добавьте первую родинку для наблюдения"}
           </p>
         </div>
@@ -144,48 +144,48 @@ export function MoleListInteractive({ moles, thumbnails }: MoleListInteractivePr
       {/* Clinical Metrics Cards */}
       {moles.length > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 shadow-sm">
-            <div className="flex items-center justify-between text-slate-400">
+          <div className="panel p-3.5 shadow-xs">
+            <div className="flex items-center justify-between text-slate-500">
               <span className="text-xs font-medium">Родинок</span>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="9" />
                 <path d="M12 3v3M12 18v3M3 12h3M18 12h3" />
               </svg>
             </div>
-            <p className="mt-2 text-xl font-bold text-slate-100">
+            <p className="mt-2 text-xl font-bold text-slate-900">
               <NumberTicker value={moles.length} />
             </p>
             <span className="text-[11px] text-slate-500">под контролем</span>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 shadow-sm">
-            <div className="flex items-center justify-between text-slate-400">
+          <div className="panel p-3.5 shadow-xs">
+            <div className="flex items-center justify-between text-slate-500">
               <span className="text-xs font-medium">Сканирований</span>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
               </svg>
             </div>
-            <p className="mt-2 text-xl font-bold text-sky-400">
+            <p className="mt-2 text-xl font-bold text-sky-600">
               <NumberTicker value={totalScans} />
             </p>
             <span className="text-[11px] text-slate-500">фото- и спектро</span>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 shadow-sm">
-            <div className="flex items-center justify-between text-slate-400">
+          <div className="panel p-3.5 shadow-xs">
+            <div className="flex items-center justify-between text-slate-500">
               <span className="text-xs font-medium">Ср. индекс риска</span>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
               </svg>
             </div>
-            <p className="mt-2 text-xl font-bold text-slate-200">
+            <p className="mt-2 text-xl font-bold text-slate-800">
               {avgRisk !== null ? `${Math.round(avgRisk * 100)}%` : "—"}
             </p>
             <span className="text-[11px] text-slate-500">по всем снимкам</span>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 shadow-sm">
-            <div className="flex items-center justify-between text-slate-400">
+          <div className="panel p-3.5 shadow-xs">
+            <div className="flex items-center justify-between text-slate-500">
               <span className="text-xs font-medium">Макс. риск</span>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -193,7 +193,7 @@ export function MoleListInteractive({ moles, thumbnails }: MoleListInteractivePr
                 <line x1="12" y1="17" x2="12.01" y2="17" />
               </svg>
             </div>
-            <p className={`mt-2 text-xl font-bold ${maxRisk !== null && maxRisk >= 0.7 ? "text-rose-400" : maxRisk !== null && maxRisk >= 0.3 ? "text-amber-400" : "text-emerald-400"}`}>
+            <p className={`mt-2 text-xl font-bold ${maxRisk !== null && maxRisk >= 0.7 ? "text-rose-600" : maxRisk !== null && maxRisk >= 0.3 ? "text-amber-600" : "text-emerald-600"}`}>
               {maxRisk !== null ? `${Math.round(maxRisk * 100)}%` : "—"}
             </p>
             <span className="text-[11px] text-slate-500">пиковое значение</span>
@@ -213,7 +213,7 @@ export function MoleListInteractive({ moles, thumbnails }: MoleListInteractivePr
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
               aria-hidden="true"
             >
               <circle cx="11" cy="11" r="8" />
@@ -235,8 +235,8 @@ export function MoleListInteractive({ moles, thumbnails }: MoleListInteractivePr
               onClick={() => setFilterTab("all")}
               className={`rounded-lg px-2.5 py-1.5 font-medium transition ${
                 filterTab === "all"
-                  ? "bg-slate-700 text-white"
-                  : "bg-slate-900/60 text-slate-400 hover:text-slate-200"
+                  ? "bg-slate-900 text-white shadow-xs"
+                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
               }`}
             >
               Все ({moles.length})
@@ -246,8 +246,8 @@ export function MoleListInteractive({ moles, thumbnails }: MoleListInteractivePr
               onClick={() => setFilterTab("attention")}
               className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 font-medium transition ${
                 filterTab === "attention"
-                  ? "bg-amber-950/70 text-amber-200 border border-amber-800/60"
-                  : "bg-slate-900/60 text-slate-400 hover:text-slate-200"
+                  ? "bg-amber-600 text-white shadow-xs"
+                  : "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
               }`}
             >
               Внимание ({attentionCount})
@@ -257,8 +257,8 @@ export function MoleListInteractive({ moles, thumbnails }: MoleListInteractivePr
               onClick={() => setFilterTab("no-scans")}
               className={`rounded-lg px-2.5 py-1.5 font-medium transition ${
                 filterTab === "no-scans"
-                  ? "bg-slate-700 text-white"
-                  : "bg-slate-900/60 text-slate-400 hover:text-slate-200"
+                  ? "bg-slate-900 text-white shadow-xs"
+                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
               }`}
             >
               Без снимков
@@ -285,7 +285,7 @@ export function MoleListInteractive({ moles, thumbnails }: MoleListInteractivePr
                 >
                   <div className="flex min-w-0 items-center gap-3.5">
                     {/* Thumbnail or placeholder */}
-                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-slate-700/60 bg-slate-800">
+                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
                       {thumbUrl ? (
                         <Image
                           src={thumbUrl}
@@ -296,7 +296,7 @@ export function MoleListInteractive({ moles, thumbnails }: MoleListInteractivePr
                           unoptimized
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-slate-500">
+                        <div className="flex h-full w-full items-center justify-center text-slate-400">
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                             <circle cx="12" cy="12" r="9" strokeDasharray="3 3" />
                             <circle cx="12" cy="12" r="3" fill="currentColor" />
@@ -308,17 +308,17 @@ export function MoleListInteractive({ moles, thumbnails }: MoleListInteractivePr
                     {/* Details */}
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="truncate text-sm font-semibold text-slate-100">
+                        <span className="truncate text-sm font-semibold text-slate-900">
                           {mole.label}
                         </span>
                         {riskInfo && (
                           <span
-                            className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                               riskInfo.level === "high"
-                                ? "bg-rose-950/80 text-rose-300 border border-rose-800/60"
+                                ? "bg-rose-50 text-rose-700 border border-rose-200"
                                 : riskInfo.level === "medium"
-                                ? "bg-amber-950/80 text-amber-300 border border-amber-800/60"
-                                : "bg-emerald-950/80 text-emerald-300 border border-emerald-800/60"
+                                ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
                             }`}
                           >
                             {riskInfo.label}
@@ -326,9 +326,9 @@ export function MoleListInteractive({ moles, thumbnails }: MoleListInteractivePr
                         )}
                       </div>
 
-                      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-400">
+                      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500">
                         {mole.body_location && (
-                          <span className="flex items-center gap-1 text-slate-300">
+                          <span className="flex items-center gap-1 text-slate-600">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
                               <circle cx="12" cy="9" r="2.5" />
@@ -347,7 +347,7 @@ export function MoleListInteractive({ moles, thumbnails }: MoleListInteractivePr
                         {latest && (
                           <>
                             <span>·</span>
-                            <span className="text-slate-500">
+                            <span className="text-slate-400">
                               {new Date(latest.created_at).toLocaleDateString("ru-RU", {
                                 day: "numeric",
                                 month: "short",
@@ -363,13 +363,13 @@ export function MoleListInteractive({ moles, thumbnails }: MoleListInteractivePr
                   <div className="flex shrink-0 items-center gap-3">
                     {risk !== null ? (
                       <div className="text-right">
-                        <span className="font-mono text-base font-bold text-slate-100">
+                        <span className="font-mono text-base font-bold text-slate-900">
                           {Math.round(risk * 100)}%
                         </span>
                         <p className="text-[10px] text-slate-500">риск</p>
                       </div>
                     ) : (
-                      <span className="rounded-md bg-slate-800 px-2 py-1 text-[11px] font-medium text-slate-400">
+                      <span className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-500">
                         Ожидает скана
                       </span>
                     )}
@@ -383,7 +383,7 @@ export function MoleListInteractive({ moles, thumbnails }: MoleListInteractivePr
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      className="text-slate-500 transition group-hover:translate-x-0.5"
+                      className="text-slate-400 transition group-hover:translate-x-0.5"
                     >
                       <path d="M9 18l6-6-6-6" />
                     </svg>
@@ -395,18 +395,18 @@ export function MoleListInteractive({ moles, thumbnails }: MoleListInteractivePr
         </ul>
       ) : (
         <div className="panel flex flex-col items-center justify-center p-8 text-center sm:p-12">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-400">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-500 border border-slate-200">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
           </div>
-          <p className="mt-3 text-sm font-semibold text-slate-200">
+          <p className="mt-3 text-sm font-semibold text-slate-900">
             {search.trim() || filterTab !== "all"
               ? "Ничего не найдено"
               : "Родинок пока нет"}
           </p>
-          <p className="mt-1 max-w-sm text-xs text-slate-400">
+          <p className="mt-1 max-w-sm text-xs text-slate-500">
             {search.trim() || filterTab !== "all"
               ? "Попробуйте изменить поисковый запрос или сбросить фильтры."
               : "Зарегистрируйте первую родинку и сделайте снимок для начала клинического мониторинга."}
@@ -432,21 +432,21 @@ export function MoleListInteractive({ moles, thumbnails }: MoleListInteractivePr
 
       {/* ABCDE Dermatological Reference Modal */}
       {showAbcdeGuide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="panel-elevated relative max-h-[90vh] w-full max-w-lg overflow-y-auto p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
+          <div className="panel-elevated relative max-h-[90vh] w-full max-w-lg overflow-y-auto p-6 bg-white border border-slate-200 shadow-xl">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-base font-bold text-slate-100">
+                <h3 className="text-base font-bold text-slate-900">
                   Правило ABCDE: клинические признаки меланомы
                 </h3>
-                <p className="mt-0.5 text-xs text-slate-400">
+                <p className="mt-0.5 text-xs text-slate-500">
                   Международный дерматологический стандарт самообследования
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowAbcdeGuide(false)}
-                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                 aria-label="Закрыть"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -455,44 +455,44 @@ export function MoleListInteractive({ moles, thumbnails }: MoleListInteractivePr
               </button>
             </div>
 
-            <div className="mt-5 space-y-3.5 text-xs">
-              <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3">
-                <span className="font-bold text-sky-400">A — Asymmetry (Асимметрия):</span>
-                <p className="mt-0.5 text-slate-300">
+            <div className="mt-5 space-y-3 text-xs">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <span className="font-bold text-sky-700">A — Asymmetry (Асимметрия):</span>
+                <p className="mt-0.5 text-slate-700">
                   Если мысленно провести линию через центр, две половины родинки не совпадают по форме.
                 </p>
               </div>
 
-              <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3">
-                <span className="font-bold text-sky-400">B — Border (Края):</span>
-                <p className="mt-0.5 text-slate-300">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <span className="font-bold text-sky-700">B — Border (Края):</span>
+                <p className="mt-0.5 text-slate-700">
                   Неровные, фестончатые, размытые или зазубренные границы образования.
                 </p>
               </div>
 
-              <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3">
-                <span className="font-bold text-sky-400">C — Color (Цвет):</span>
-                <p className="mt-0.5 text-slate-300">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <span className="font-bold text-sky-700">C — Color (Цвет):</span>
+                <p className="mt-0.5 text-slate-700">
                   Неоднородный оттенок: присутствие оттенков коричневого, черного, розового, белого или синеватого.
                 </p>
               </div>
 
-              <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3">
-                <span className="font-bold text-sky-400">D — Diameter (Диаметр):</span>
-                <p className="mt-0.5 text-slate-300">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <span className="font-bold text-sky-700">D — Diameter (Диаметр):</span>
+                <p className="mt-0.5 text-slate-700">
                   Размер более 6 мм (сопоставимо с ластиком на карандаше), хотя меланома бывает и меньше.
                 </p>
               </div>
 
-              <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-3">
-                <span className="font-bold text-sky-400">E — Evolution (Динамика/Изменения):</span>
-                <p className="mt-0.5 text-slate-300">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <span className="font-bold text-sky-700">E — Evolution (Динамика/Изменения):</span>
+                <p className="mt-0.5 text-slate-700">
                   Наиболее важный признак: любое изменение размера, формы, цвета, появление зуда или кровоточивости со временем.
                 </p>
               </div>
             </div>
 
-            <div className="mt-5 rounded-lg border border-amber-900/40 bg-amber-950/20 p-3 text-xs text-amber-200">
+            <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
               <strong>Медицинское предупреждение:</strong> Данное приложение проводит предварительную оценку с помощью нейросети и спектрометрии, но не заменяет дерматоскопию у квалифицированного врача. При любых сомнениях обратитесь к специалисту.
             </div>
 
