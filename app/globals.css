@@ -1,60 +1,273 @@
-@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Noto+Sans:wght@400;500;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Healthcare App palette — pulled from ui-ux-pro-max --design-system
-   ("healthcare app dermatology skin tracking", teal/cyan + health green,
-   WCAG-checked pairs). Replaces the earlier slate/blue "Soft UI Evolution"
-   pass, which read as generic SaaS rather than medical.
-   Scoped to :root so /capture (which stays dark on purpose, for camera
-   visibility against skin tones) keeps its own literal neutral-950 classes
-   untouched — that screen is intentionally out of scope for this palette. */
+/* ═══════════════════════════════════════════════════════════════
+   SKIN SCANNER — Clinical Dermatological Design System
+   Professional, reliable, human-designed medical UI.
+   No gimmicky neon gradients, glowing blobs, or AI templates.
+   ═══════════════════════════════════════════════════════════════ */
+
 :root {
-  --color-primary: #0891b2;
-  --color-on-primary: #ffffff;
-  --color-secondary: #22d3ee;
-  --color-accent: #059669;
-  --color-background: #ecfeff;
-  --color-foreground: #164e63;
-  --color-card: #ffffff;
-  --color-muted: #e8f1f6;
-  --color-muted-foreground: #64748b;
-  --color-border: #a5f3fc;
-  --color-destructive: #dc2626;
-  --color-warning: #d97706;
-  --color-success: #16a34a;
-  --color-ring: #0891b2;
-  --shadow-panel: 0 1px 2px rgba(22, 78, 99, 0.04), 0 4px 12px rgba(8, 145, 178, 0.06);
+  /* Medical clinical palette */
+  --color-primary:          #0284c7;
+  --color-primary-hover:    #0369a1;
+  --color-primary-light:    #38bdf8;
+  --color-on-primary:       #ffffff;
+
+  --color-secondary:        #64748b;
+  --color-accent:           #0f766e;
+  --color-accent-light:     #14b8a6;
+
+  /* Surfaces & canvas */
+  --color-background:       #0b0f17;
+  --color-surface:          #111827;
+  --color-surface-2:        #172033;
+  --color-surface-3:        #1e293b;
+
+  /* Typography */
+  --color-foreground:       #f8fafc;
+  --color-foreground-2:     #94a3b8;
+  --color-foreground-3:     #64748b;
+
+  /* Semantic aliases */
+  --color-card:             var(--color-surface);
+  --color-muted:            var(--color-surface-2);
+  --color-muted-foreground: var(--color-foreground-2);
+
+  /* Precise 1px borders */
+  --color-border:           rgba(255, 255, 255, 0.08);
+  --color-border-subtle:    rgba(255, 255, 255, 0.04);
+  --color-border-focus:     #38bdf8;
+
+  /* Clinical diagnostics */
+  --color-destructive:      #f43f5e;
+  --color-warning:          #f59e0b;
+  --color-success:          #10b981;
+  --color-ring:             #0284c7;
+
+  /* Purposeful, clean shadows */
+  --shadow-panel:
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-elevated:
+    0 4px 20px rgba(0, 0, 0, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* ── Base ──────────────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  font-family: "Figtree", "Noto Sans", sans-serif;
-  background: var(--color-background);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--color-background);
   color: var(--color-foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Shared card treatment so list rows, stat tiles and empty states look like
-   one system instead of each page repeating its own border/shadow combo. */
+/* ── Component layer ───────────────────────────────────────────── */
 @layer components {
+  /* Clinical surface panel */
   .panel {
-    background: var(--color-card);
+    background-color: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: 1rem;
+    border-radius: 0.875rem;
     box-shadow: var(--shadow-panel);
+  }
+
+  /* Elevated panel for modals & popovers */
+  .panel-elevated {
+    background-color: var(--color-surface-2);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 1rem;
+    box-shadow: var(--shadow-elevated);
+  }
+
+  /* Interactive card hover */
+  .panel-interactive {
+    transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.15s ease;
+  }
+  .panel-interactive:hover {
+    border-color: rgba(56, 189, 248, 0.35);
+    background-color: #141d2e;
+    transform: translateY(-1px);
+  }
+
+  /* Primary action button */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    padding: 0 1.125rem;
+    border-radius: 0.625rem;
+    background-color: var(--color-primary);
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    text-decoration: none;
+  }
+  .btn-primary:hover {
+    background-color: var(--color-primary-hover);
+  }
+  .btn-primary:active {
+    transform: scale(0.98);
+  }
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Accent action button (teal/green) */
+  .btn-accent {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    padding: 0 1.125rem;
+    border-radius: 0.625rem;
+    background-color: #0f766e;
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+    cursor: pointer;
+    border: 1px solid rgba(20, 184, 166, 0.25);
+    text-decoration: none;
+  }
+  .btn-accent:hover {
+    background-color: #115e59;
+  }
+  .btn-accent:active {
+    transform: scale(0.98);
+  }
+  .btn-accent:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Ghost/Secondary button */
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    padding: 0 1rem;
+    border-radius: 0.625rem;
+    background-color: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--color-border);
+    color: var(--color-foreground);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .btn-ghost:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.16);
+  }
+  .btn-ghost:active {
+    transform: scale(0.98);
+  }
+  .btn-ghost:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Clean, crisp input field */
+  .input-field {
+    min-height: 2.5rem;
+    width: 100%;
+    padding: 0 0.875rem;
+    border-radius: 0.625rem;
+    background-color: #0d131f;
+    border: 1px solid var(--color-border);
+    color: var(--color-foreground);
+    font-size: 0.9375rem;
+    font-family: inherit;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    outline: none;
+  }
+  .input-field::placeholder {
+    color: var(--color-foreground-3);
+  }
+  .input-field:focus {
+    border-color: var(--color-primary-light);
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.15);
+  }
+  .input-field:hover:not(:focus) {
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  /* Status Badges */
+  .risk-badge-high {
+    background-color: rgba(244, 63, 94, 0.12);
+    color: #f43f5e;
+    border: 1px solid rgba(244, 63, 94, 0.25);
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .risk-badge-medium {
+    background-color: rgba(245, 158, 11, 0.12);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .risk-badge-low {
+    background-color: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
   }
 }
 
+/* ── Clean Scrollbars ──────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* ── Selection ─────────────────────────────────────────────────── */
+::selection {
+  background: rgba(56, 189, 248, 0.25);
+  color: #ffffff;
+}
+
+/* ── Reduced motion ────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
-}
-
-/* Used by components/ui/blur-fade.tsx — staggered list-item entrance. */
-@keyframes blur-fade-in {
-  from { opacity: 0; transform: translateY(6px); filter: blur(6px); }
-  to { opacity: 1; transform: translateY(0); filter: blur(0); }
 }

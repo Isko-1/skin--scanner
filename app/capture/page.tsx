@@ -6,7 +6,6 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { scoreCanvasSharpness } from "@/lib/sharpness";
 import { scoreSkinToneRatio, SKIN_RATIO_MIN } from "@/lib/skin-detection";
-import { Ripple } from "@/components/ui/ripple";
 
 const supabase = createClient();
 
@@ -465,12 +464,9 @@ export default function CapturePage({ searchParams }: { searchParams: CaptureSea
             aria-label="Снять кадр"
             className="relative flex h-16 w-16 items-center justify-center text-cyan-400 disabled:opacity-40"
           >
-            {/* Ripple's default hero-backdrop sizing doesn't apply here —
-                mainCircleSize/spacing are scaled down to fit inside a 64px
-                button instead of spilling across the footer. Purely a "tap
-                here" cue, so it's dropped once cameraReady is false. */}
-            {cameraReady && <Ripple mainCircleSize={30} mainCircleOpacity={0.35} numCircles={3} spacing={14} />}
-            <span className="relative z-10 h-16 w-16 rounded-full border-4 border-neutral-300 bg-white/90 transition active:scale-95" />
+            <span className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-white/70 p-1 transition active:scale-95">
+              <span className="h-full w-full rounded-full bg-white shadow-sm" />
+            </span>
           </button>
         )}
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
@@ -12,9 +13,6 @@ export default function NewMolePage() {
   const router = useRouter();
   const [label, setLabel] = useState("");
   const [bodyLocation, setBodyLocation] = useState("");
-  // Existing labels for this user, lowercased, just for a soft duplicate
-  // warning — nothing here blocks submission, since "родинка" x3 is a
-  // legitimate thing to have before you've picked better names for them.
   const [existingLabels, setExistingLabels] = useState<string[]>([]);
 
   useEffect(() => {
@@ -26,12 +24,6 @@ export default function NewMolePage() {
 
   const isDuplicate = label.trim() !== "" && existingLabels.includes(label.trim().toLowerCase());
 
-  // No Supabase call here on purpose: writing to `moles` this early meant an
-  // empty row landed in the DB the moment someone typed a label, even if
-  // they backed out of the camera permission prompt or just closed the tab —
-  // every abandoned flow left an orphaned mole with zero scans. Now label +
-  // body_location just ride along as query params, and /capture creates the
-  // mole row itself, only once there's an actual photo to attach to it.
   function proceed() {
     if (!label.trim()) return;
     const params = new URLSearchParams({ label: label.trim() });
@@ -40,43 +32,78 @@ export default function NewMolePage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-4 bg-[var(--color-background)] px-4 py-6 text-[var(--color-foreground)]">
-      <h1 className="text-lg font-semibold">Новая родинка</h1>
+    <main className="mx-auto flex min-h-screen max-w-lg flex-col px-4 py-8">
+      <div className="mb-6 flex items-center gap-3">
+        <Link
+          href="/"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-400 transition hover:border-slate-700 hover:text-white"
+          aria-label="Назад к списку"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </Link>
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-slate-100">
+            Регистрация родинки
+          </h1>
+          <p className="text-xs text-slate-400">
+            Укажите ориентир и перейдите к оптической съёмке
+          </p>
+        </div>
+      </div>
 
-      <label className="flex flex-col gap-1 text-sm">
-        Название
-        <input
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          placeholder="например, левое плечо"
-          maxLength={LABEL_MAX}
-          className="min-h-11 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] px-3 text-base focus:outline-none focus:ring-2 focus:ring-[var(--color-ring)]/40"
-        />
-      </label>
-      {isDuplicate && (
-        <p className="-mt-2 text-xs text-[var(--color-warning)]">
-          Родинка с таким названием уже есть — можно продолжить, но её будет сложнее отличить в списке.
-        </p>
-      )}
+      <div className="panel space-y-5 p-6">
+        <label className="flex flex-col gap-1.5">
+          <span className="text-xs font-semibold text-slate-300">
+            Название или ориентир <span className="text-rose-400">*</span>
+          </span>
+          <input
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            placeholder="например, левое плечо у ключицы"
+            maxLength={LABEL_MAX}
+            className="input-field text-xs"
+          />
+          <span className="text-[11px] text-slate-500">
+            Короткое понятное название, чтобы легко находить родинку в регистре
+          </span>
+        </label>
 
-      <label className="flex flex-col gap-1 text-sm">
-        Расположение на теле (необязательно)
-        <input
-          value={bodyLocation}
-          onChange={(e) => setBodyLocation(e.target.value)}
-          placeholder="например, спина, под лопаткой"
-          maxLength={LOCATION_MAX}
-          className="min-h-11 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] px-3 text-base focus:outline-none focus:ring-2 focus:ring-[var(--color-ring)]/40"
-        />
-      </label>
+        {isDuplicate && (
+          <div className="rounded-lg border border-amber-900/40 bg-amber-950/20 p-2.5 text-xs text-amber-300">
+            Образование с похожим названием уже есть в вашем списке. Вы можете продолжить, но рекомендуем уточнить место.
+          </div>
+        )}
 
-      <button
-        onClick={proceed}
-        disabled={!label.trim()}
-        className="min-h-11 rounded-xl bg-[var(--color-accent)] px-5 text-sm font-medium text-white shadow-sm transition hover:brightness-110 active:scale-95 disabled:opacity-40"
-      >
-        Продолжить к съёмке
-      </button>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-xs font-semibold text-slate-300">
+            Анатомическая область (необязательно)
+          </span>
+          <input
+            value={bodyLocation}
+            onChange={(e) => setBodyLocation(e.target.value)}
+            placeholder="например, спина, под правой лопаткой"
+            maxLength={LOCATION_MAX}
+            className="input-field text-xs"
+          />
+        </label>
+
+        <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-3 text-xs text-slate-400">
+          <span className="font-semibold text-slate-300">Что произойдёт дальше:</span>
+          <p className="mt-0.5 text-slate-400">
+            Откроется камера с детектором резкости и площади кожи. После фиксации чёткого кадра снимок привяжется к этой родинке.
+          </p>
+        </div>
+
+        <button
+          onClick={proceed}
+          disabled={!label.trim()}
+          className="btn-primary w-full text-xs"
+        >
+          Перейти к съёмке
+        </button>
+      </div>
     </main>
   );
 }

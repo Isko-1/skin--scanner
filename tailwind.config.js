@@ -4,29 +4,17 @@ module.exports = {
   theme: {
     extend: {
       keyframes: {
-        gradient: { to: { backgroundPosition: "200% center" } },
-        ripple: {
-          "0%, 100%": { transform: "translate(-50%, -50%) scale(1)" },
-          "50%": { transform: "translate(-50%, -50%) scale(1.15)" },
-        },
-        // Used for AnimatedCircularProgressBar's center number, and for
-        // crossfading between /capture's phases (camera/review/uploading/
-        // error). Plain opacity — GSAP's "Subtle" page-transition preset
-        // (ui-ux-pro-max --domain gsap) recommends exactly this duration
-        // range (200-300ms) and an inOut-style ease for state changes that
-        // aren't a full route navigation; power1.inOut maps closely enough
-        // to Tailwind's built-in `ease-in-out` that pulling in GSAP for one
-        // opacity tween isn't worth a new dependency (same reasoning as
-        // number-ticker.tsx choosing rAF over `motion`).
-        fadeIn: { from: { opacity: "0" }, to: { opacity: "1" } },
+        fadeIn:     { from: { opacity: "0" }, to: { opacity: "1" } },
+        "slide-up": { from: { opacity: "0", transform: "translateY(8px)" }, to: { opacity: "1", transform: "translateY(0)" } },
       },
       animation: {
-        // Used by AnimatedGradientText and Ripple (components/ui) — sourced
-        // from the MagicUI registry, reimplemented as plain CSS keyframes
-        // instead of pulling in the `motion` package for two small loops.
-        gradient: "gradient 4s linear infinite",
-        ripple: "ripple 2.5s ease-out infinite",
-        "fade-in": "fadeIn 220ms ease-in-out",
+        "fade-in":  "fadeIn 180ms ease-out",
+        "slide-up": "slide-up 220ms ease-out both",
+      },
+      colors: {
+        surface:     "#0f172a",
+        "surface-2": "#172033",
+        "surface-3": "#1e293b",
       },
     },
   },
