@@ -437,8 +437,9 @@ export default function CapturePage({ searchParams }: { searchParams: CaptureSea
 
         {phase === "review" && (
           <div
+            key={isBlurry ? "blurry" : looksOffTarget ? "off-target" : "ok"}
             role="status"
-            className={`absolute inset-x-3 bottom-3 rounded-xl border px-4 py-3 text-center text-sm backdrop-blur ${
+            className={`animate-fade-in absolute inset-x-3 bottom-3 rounded-xl border px-4 py-3 text-center text-sm backdrop-blur ${
               isBlurry
                 ? "border-red-500/40 bg-red-950/80 text-red-300"
                 : looksOffTarget
@@ -456,6 +457,7 @@ export default function CapturePage({ searchParams }: { searchParams: CaptureSea
       </div>
 
       <footer className="flex items-center justify-center gap-4 border-t border-neutral-800/80 bg-neutral-950/80 px-4 py-5 backdrop-blur">
+        <div key={phase} className="animate-fade-in flex items-center justify-center gap-4">
         {phase === "camera" && (
           <button
             onClick={capture}
@@ -540,6 +542,7 @@ export default function CapturePage({ searchParams }: { searchParams: CaptureSea
             )}
           </div>
         )}
+        </div>
       </footer>
     </main>
   );

@@ -6,6 +6,16 @@
 // + lib/spectral-patterns.ts on the website side for what happens to the
 // data after this).
 //
+// UPDATED: the website side now requires TWO readings per session (lesion +
+// adjacent normal skin), sent as two separate POSTs with a "reading_type"
+// field — see the diffuse-reflectance-spectroscopy literature notes in
+// lib/spectral.ts for why a lesion reading alone isn't enough (it confounds
+// skin tone with lesion biology). This sketch alternates: short press #1
+// sends "lesion", short press #2 sends "reference", then back to "lesion"
+// for the next mole. The status LED shows which one is next — see
+// updateIdleLed() — since the probe has no screen, that's the only way to
+// tell the two states apart.
+//
 // Board: ESP32 DevKit clone. Libraries needed (Arduino IDE Library Manager):
 //   - WiFiManager by tzapu       (captive portal WiFi setup — see below)
 //   - Adafruit AS7341            (spectral sensor)
@@ -41,7 +51,7 @@ constexpr uint32_t LASER_WARMUP_MS = 150; // let the laser/sensor settle before 
 // from the website first, then copy the uuid out of the URL).
 constexpr char PEN_MOLE_ID[] = "REPLACE_WITH_REAL_MOLE_UUID";
 
-constexpr char SERVER_HOST[] = "your-site.vercel.app"; // no https://, no trailing slash
+constexpr char SERVER_HOST[] = "REPLACE_WITH_REAL_DEPLOY_HOST"; // e.g. "skin-scanner.vercel.app" — no https://, no trailing slash
 constexpr char SPECTRAL_PATH[] = "/api/spectral";
 
 // Must match SPECTRAL_DEVICE_SECRET in .env.local on the website exactly —
@@ -51,6 +61,14 @@ constexpr char DEVICE_SECRET[] = "REPLACE_WITH_REAL_SECRET";
 
 Adafruit_AS7341 as7341;
 bool sensorReady = false;
+
+// Which reading a button press sends next. Starts at LESION because that's
+// the natural first step of a session; toggles after every successful send
+// (see takeReadingAndSend) regardless of whether the site actually finds a
+// pairing match — the firmware's job ends at a successful POST, pairing is
+// entirely a server-side concern (5-minute window, see app/api/spectral/route.ts).
+enum ReadingType { READING_LESION, READING_REFERENCE };
+ReadingType nextReading = READING_LESION;
 
 // ---------------------------------------------------------------------------
 // Setup
@@ -67,7 +85,7 @@ void setup() {
   sensorReady = as7341.begin();
   if (!sensorReady) {
     // Not fatal — WiFi/button still work, so you can debug wiring over
-    // Serial without the whole sketch refusing to boot. blinkError() below
+    // Serial without the whole sketch refusing to boot. blinkStatus() below
     // makes this visible even without a laptop plugged in.
     Serial.println("AS7341 not found — check I2C wiring (SDA/SCL) before anything else.");
   } else {
@@ -81,7 +99,7 @@ void setup() {
   }
 
   connectWifi();
-  Serial.println("Ready. Short press = take a reading. Hold 3s = reset WiFi.");
+  Serial.println("Ready. Short press = lesion reading, then next short press = reference reading. Hold 3s = reset WiFi.");
 }
 
 // ---------------------------------------------------------------------------
@@ -141,6 +159,7 @@ void loop() {
   }
 
   buttonWasDown = buttonIsDown;
+  updateIdleLed();
 }
 
 void handleShortPress() {
@@ -155,7 +174,7 @@ void handleShortPress() {
     return;
   }
 
-  takeReadingAndSend();
+  takeReadingAndSend(nextReading);
   lastReadingAt = millis();
 }
 
@@ -169,9 +188,36 @@ void resetWifiAndRestart() {
 }
 
 // ---------------------------------------------------------------------------
+// Idle LED — distinguishes "waiting for the lesion reading" (LED off) from
+// "lesion sent, now move the probe to nearby normal skin and press again"
+// (LED blinks slowly). Non-blocking (no delay()) so it doesn't interfere
+// with button responsiveness or the cooldown timer. Only runs when nothing
+// else is driving the LED (takeReadingAndSend/blinkStatus take over
+// temporarily during an actual reading).
+// ---------------------------------------------------------------------------
+bool readingInProgress = false;
+
+void updateIdleLed() {
+  if (readingInProgress) return; // blinkStatus()/the reading itself owns the LED right now
+
+  if (nextReading == READING_LESION) {
+    digitalWrite(PIN_STATUS_LED, LOW);
+    return;
+  }
+
+  // Waiting for the reference reading: on 150ms / off 850ms, repeating —
+  // deliberately slow and sparse so it doesn't look like an error blink
+  // (those are fast, 80-300ms on/off) or the solid-on WiFi-setup state.
+  constexpr uint32_t CYCLE_MS = 1000;
+  constexpr uint32_t ON_MS = 150;
+  bool ledOn = (millis() % CYCLE_MS) < ON_MS;
+  digitalWrite(PIN_STATUS_LED, ledOn ? HIGH : LOW);
+}
+
+// ---------------------------------------------------------------------------
 // The actual measurement + upload.
 // ---------------------------------------------------------------------------
-void takeReadingAndSend() {
+void takeReadingAndSend(ReadingType type) {
   if (!sensorReady) {
     Serial.println("Reading requested but AS7341 never initialized — check wiring.");
     blinkStatus(3, 300); // slow triple-blink = hardware problem, distinct from cooldown's quick one
@@ -183,6 +229,7 @@ void takeReadingAndSend() {
     return;
   }
 
+  readingInProgress = true;
   digitalWrite(PIN_STATUS_LED, HIGH);
   digitalWrite(PIN_LASER, HIGH);
   delay(LASER_WARMUP_MS);
@@ -196,6 +243,7 @@ void takeReadingAndSend() {
     Serial.println("AS7341 read failed.");
     digitalWrite(PIN_STATUS_LED, LOW);
     blinkStatus(3, 300);
+    readingInProgress = false;
     return;
   }
 
@@ -210,12 +258,22 @@ void takeReadingAndSend() {
   uint16_t clearVal = readings[10];
   uint16_t nirVal = readings[11];
 
-  sendReading(f1, f2, f3, f4, f5, f6, f7, f8, clearVal, nirVal);
+  bool sent = sendReading(type, f1, f2, f3, f4, f5, f6, f7, f8, clearVal, nirVal);
   digitalWrite(PIN_STATUS_LED, LOW);
+  readingInProgress = false;
+
+  if (sent) {
+    // Only advance to the other reading type on a CONFIRMED successful
+    // POST — if it failed, nextReading stays put so the next button press
+    // retries the same reading instead of silently skipping it and sending
+    // an unpaired mismatched pair (e.g. two "lesion" rows because the
+    // reference POST actually failed but the state moved on anyway).
+    nextReading = (type == READING_LESION) ? READING_REFERENCE : READING_LESION;
+  }
 }
 
-void sendReading(uint16_t f1, uint16_t f2, uint16_t f3, uint16_t f4, uint16_t f5, uint16_t f6, uint16_t f7,
-                  uint16_t f8, uint16_t clearVal, uint16_t nirVal) {
+bool sendReading(ReadingType type, uint16_t f1, uint16_t f2, uint16_t f3, uint16_t f4, uint16_t f5, uint16_t f6,
+                  uint16_t f7, uint16_t f8, uint16_t clearVal, uint16_t nirVal) {
   WiFiClientSecure client;
   // MVP shortcut: skips TLS certificate validation. Fine for a jury demo on
   // a network you control; do NOT ship this as-is if the probe ever leaves
@@ -227,7 +285,7 @@ void sendReading(uint16_t f1, uint16_t f2, uint16_t f3, uint16_t f4, uint16_t f5
   if (!http.begin(client, url)) {
     Serial.println("http.begin() failed — check SERVER_HOST.");
     blinkStatus(3, 300);
-    return;
+    return false;
   }
 
   http.addHeader("Content-Type", "application/json");
@@ -235,6 +293,7 @@ void sendReading(uint16_t f1, uint16_t f2, uint16_t f3, uint16_t f4, uint16_t f5
 
   JsonDocument doc; // ArduinoJson v7 — no template size argument needed
   doc["mole_id"] = PEN_MOLE_ID;
+  doc["reading_type"] = (type == READING_LESION) ? "lesion" : "reference";
   JsonObject channels = doc["channels"].to<JsonObject>();
   channels["f1"] = f1;
   channels["f2"] = f2;
@@ -251,8 +310,9 @@ void sendReading(uint16_t f1, uint16_t f2, uint16_t f3, uint16_t f4, uint16_t f5
   serializeJson(doc, body);
 
   int status = http.POST(body);
-  if (status == 200) {
-    Serial.println("Reading sent OK.");
+  bool ok = (status == 200);
+  if (ok) {
+    Serial.println(type == READING_LESION ? "Lesion reading sent OK." : "Reference reading sent OK.");
     blinkStatus(1, 400); // single long blink = success
   } else {
     Serial.printf("POST failed, HTTP %d: %s\n", status, http.getString().c_str());
@@ -260,6 +320,7 @@ void sendReading(uint16_t f1, uint16_t f2, uint16_t f3, uint16_t f4, uint16_t f5
   }
 
   http.end();
+  return ok;
 }
 
 // ---------------------------------------------------------------------------
