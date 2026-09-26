@@ -6,6 +6,9 @@ import { PdfReportButton } from "@/components/pdf-report-button";
 import { SpectralLive } from "@/components/spectral-live";
 import { SpectralButtons } from "@/components/spectral-buttons";
 import { MoleEvolutionCompare } from "@/components/mole-evolution-compare";
+import { MultimodalRiskCard } from "@/components/multimodal-risk-card";
+import { computeMultimodalRisk } from "@/lib/multimodal-risk";
+import { AbcdeInteractiveChecklist } from "@/components/abcde-interactive-checklist";
 
 export const dynamic = "force-dynamic";
 
@@ -77,6 +80,22 @@ export default async function MoleHistoryPage({ params }: { params: { id: string
   const firstAnalysis = analyses ? analyses[analyses.length - 1] : null;
   const latestAnalysis = analyses ? analyses[0] : null;
 
+  // Fetch latest paired spectral reading to compute multimodal risk
+  const { data: latestSpectral } = await supabase
+    .from("spectral_readings")
+    .select("risk_score, created_at")
+    .eq("mole_id", params.id)
+    .eq("reading_type", "lesion")
+    .not("risk_score", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const multimodalData = computeMultimodalRisk(
+    latestRisk !== null ? Number(latestRisk) : null,
+    latestSpectral?.risk_score != null ? Number(latestSpectral.risk_score) : null
+  );
+
   return (
     <main className="mx-auto min-h-screen max-w-2xl px-4 py-8">
       {/* Header */}
@@ -145,6 +164,13 @@ export default async function MoleHistoryPage({ params }: { params: { id: string
         </div>
       </header>
 
+      {/* Multimodal Combined Risk Card (Photo AI + Optical Spectral DRS) */}
+      {multimodalData && (
+        <div className="mb-6">
+          <MultimodalRiskCard data={multimodalData} />
+        </div>
+      )}
+
       {/* Evolution Comparison (if 2+ scans exist) */}
       {hasMultipleScans && firstAnalysis && latestAnalysis && (
         <div className="mb-6">
@@ -171,6 +197,11 @@ export default async function MoleHistoryPage({ params }: { params: { id: string
       <div className="mb-6 space-y-3">
         <SpectralLive moleId={params.id} />
         <SpectralButtons moleId={params.id} />
+      </div>
+
+      {/* Clinical ABCDE Checklist */}
+      <div className="mb-6">
+        <AbcdeInteractiveChecklist moleId={params.id} />
       </div>
 
       {/* Scan history */}

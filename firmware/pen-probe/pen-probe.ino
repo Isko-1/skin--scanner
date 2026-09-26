@@ -47,9 +47,10 @@ constexpr uint32_t LONG_PRESS_MS = 3000;  // hold this long to reset WiFi + reop
 constexpr uint32_t COOLDOWN_MS = 3000;    // minimum gap between readings — see loop() for why
 constexpr uint32_t LASER_WARMUP_MS = 150; // let the laser/sensor settle before integrating
 
-// This mole_id must exist in your Supabase `moles` table already (create it
-// from the website first, then copy the uuid out of the URL).
-constexpr char PEN_MOLE_ID[] = "REPLACE_WITH_REAL_MOLE_UUID";
+// Dynamic pairing: set to "auto" so readings automatically attach to whichever
+// mole is currently open on the website! (No reflashing needed when scanning different moles).
+// You can still set a specific UUID here if you want to lock the probe to one mole.
+constexpr char PEN_MOLE_ID[] = "auto";
 
 constexpr char SERVER_HOST[] = "REPLACE_WITH_REAL_DEPLOY_HOST"; // e.g. "skin-scanner.vercel.app" — no https://, no trailing slash
 constexpr char SPECTRAL_PATH[] = "/api/spectral";
@@ -292,7 +293,11 @@ bool sendReading(ReadingType type, uint16_t f1, uint16_t f2, uint16_t f3, uint16
   http.addHeader("Authorization", String("Bearer ") + DEVICE_SECRET);
 
   JsonDocument doc; // ArduinoJson v7 — no template size argument needed
-  doc["mole_id"] = PEN_MOLE_ID;
+  if (strlen(PEN_MOLE_ID) == 0 || strcmp(PEN_MOLE_ID, "REPLACE_WITH_REAL_MOLE_UUID") == 0) {
+    doc["mole_id"] = "auto";
+  } else {
+    doc["mole_id"] = PEN_MOLE_ID;
+  }
   doc["reading_type"] = (type == READING_LESION) ? "lesion" : "reference";
   JsonObject channels = doc["channels"].to<JsonObject>();
   channels["f1"] = f1;

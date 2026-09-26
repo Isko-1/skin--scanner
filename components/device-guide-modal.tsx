@@ -14,7 +14,7 @@ export function DeviceGuideModal({
   triggerButton,
 }: DeviceGuideModalProps) {
   const [uncontrolledIsOpen, setUncontrolledIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"steps" | "led" | "faq" | "trouble">("steps");
+  const [activeTab, setActiveTab] = useState<"steps" | "trouble" | "faq">("steps");
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
 
   const isControlled = controlledIsOpen !== undefined;
@@ -133,17 +133,6 @@ export function DeviceGuideModal({
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab("led")}
-                className={`py-3 border-b-2 transition ${
-                  activeTab === "led"
-                    ? "border-sky-600 text-sky-700 font-semibold"
-                    : "border-transparent text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                💡 Индикация LED
-              </button>
-              <button
-                type="button"
                 onClick={() => setActiveTab("trouble")}
                 className={`py-3 border-b-2 transition ${
                   activeTab === "trouble"
@@ -242,56 +231,6 @@ export function DeviceGuideModal({
                       </div>
                     </li>
                   </ol>
-                </div>
-              )}
-
-              {activeTab === "led" && (
-                <div className="space-y-3">
-                  <p className="text-xs text-slate-600">
-                    У спектрального щупа нет экрана — состояние устройства отображается встроенным светодиодом на корпусе:
-                  </p>
-
-                  <div className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white overflow-hidden text-xs">
-                    <div className="flex items-center gap-3 p-3">
-                      <span className="h-3 w-3 rounded-full bg-emerald-500 shadow-xs animate-pulse" />
-                      <div className="flex-1">
-                        <span className="font-semibold text-slate-900">Горит непрерывно</span>
-                        <p className="text-slate-500">
-                          Зонд готов к первому замеру (исследование <strong>родинки</strong>).
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 p-3">
-                      <span className="h-3 w-3 rounded-full bg-sky-500 shadow-xs" />
-                      <div className="flex-1">
-                        <span className="font-semibold text-slate-900">Медленное мигание</span>
-                        <p className="text-slate-500">
-                          Первый замер принят. Зонд ожидает замера <strong>здоровой кожи</strong> для калибровки.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 p-3">
-                      <span className="h-3 w-3 rounded-full bg-amber-500 shadow-xs" />
-                      <div className="flex-1">
-                        <span className="font-semibold text-slate-900">Быстрое мигание</span>
-                        <p className="text-slate-500">
-                          Режим настройки Wi-Fi (точка «SkinProbe-Setup» активна) или передача данных на сервер.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 p-3">
-                      <span className="h-3 w-3 rounded-full bg-rose-500 shadow-xs" />
-                      <div className="flex-1">
-                        <span className="font-semibold text-slate-900">Удержание кнопки 3 секунды</span>
-                        <p className="text-slate-500">
-                          Полный сброс сохранённой сети Wi-Fi. Используйте, если сменился роутер или пароль.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               )}
 

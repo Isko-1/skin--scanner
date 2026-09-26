@@ -29,6 +29,13 @@ export function SpectralButtons({ moleId }: Props) {
 
   // ── Realtime: watch for new readings from the probe ──────────────────────
   useEffect(() => {
+    // Automatically register this mole as active target for incoming probe readings
+    fetch("/api/probe/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mole_id: moleId }),
+    }).catch(() => {});
+
     const supabase = createClient();
 
     const channel = supabase
@@ -55,6 +62,12 @@ export function SpectralButtons({ moleId }: Props) {
   }, [moleId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function startWaiting(type: ReadingType) {
+    // Refresh pairing session when user initiates scan
+    fetch("/api/probe/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mole_id: moleId }),
+    }).catch(() => {});
     const set = type === "lesion" ? setLesion : setReference;
     const setSec = type === "lesion" ? setLesionSec : setRefSec;
     const timerRef = type === "lesion" ? lesionTimer : refTimer;
@@ -113,7 +126,13 @@ export function SpectralButtons({ moleId }: Props) {
             </svg>
           </span>
           <div>
-            <p className="text-sm font-semibold text-[var(--color-foreground)]">Спектральный зонд</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-[var(--color-foreground)]">Спектральный зонд</p>
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 text-[10px] font-medium text-emerald-700" title="Входящие замеры с ESP32 будут автоматически записаны в эту родинку">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Зонд привязан
+              </span>
+            </div>
             <p className="text-xs text-[var(--color-muted-foreground)]">
               Нажмите кнопку, затем приложите зонд — данные придут автоматически
             </p>
