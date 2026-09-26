@@ -97,15 +97,22 @@ export interface SpectralIndices {
  * confident-looking number is worse than an honest "needs calibration" label.
  */
 export function computeSpectralIndices(lesion: SpectralChannels, reference: SpectralChannels): SpectralIndices {
+  // Guard: if either reading has zero or empty counts, return zero risk
+  const lesionSum = CHANNEL_KEYS.reduce((sum, k) => sum + (lesion[k] || 0), 0);
+  const refSum = CHANNEL_KEYS.reduce((sum, k) => sum + (reference[k] || 0), 0);
+  if (lesionSum <= 0 || refSum <= 0) {
+    return { erythemaIndex: 0, melaninIndex: 0, riskScore: 0 };
+  }
+
   const ratios = computeLiteratureRatios(computeContrast(lesion, reference));
   const erythemaIndex = ratios.r540_650;
   const melaninIndex = ratios.r650_950;
 
-  // Folds both indices into 0-1 so this can share RiskGauge with
-  // photo_analyses.risk_score. tanh keeps outliers from ever exceeding the
-  // gauge's [0,1] range instead of clamping/discarding them.
+  // combined > 0 indicates excess erythema or melanin in the lesion relative to healthy skin.
+  // When combined <= 0 (lesion is equal to or lighter/less vascular than normal skin),
+  // riskScore is 0 (NOT 0.5, which was a mathematical artifact of (tanh(0)+1)/2).
   const combined = 0.5 * erythemaIndex + 0.5 * melaninIndex;
-  const riskScore = (Math.tanh(combined) + 1) / 2;
+  const riskScore = combined <= 0 ? 0 : Math.min(1, Math.tanh(combined));
 
   return { erythemaIndex, melaninIndex, riskScore };
 }

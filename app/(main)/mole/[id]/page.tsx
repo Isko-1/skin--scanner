@@ -83,7 +83,7 @@ export default async function MoleHistoryPage({ params }: { params: { id: string
   // Fetch latest paired spectral reading to compute multimodal risk
   const { data: latestSpectral } = await supabase
     .from("spectral_readings")
-    .select("risk_score, created_at")
+    .select("risk_score, channels, created_at")
     .eq("mole_id", params.id)
     .eq("reading_type", "lesion")
     .not("risk_score", "is", null)
@@ -91,9 +91,20 @@ export default async function MoleHistoryPage({ params }: { params: { id: string
     .limit(1)
     .maybeSingle();
 
+  // Guard: if raw channels in DB are all 0 or missing, risk score is 0
+  const isZeroChannels =
+    !latestSpectral?.channels ||
+    Object.values(latestSpectral.channels as Record<string, number>).every((v) => Number(v) <= 0);
+
+  const sanitizedSpectralRisk = isZeroChannels
+    ? 0
+    : latestSpectral?.risk_score != null
+    ? Number(latestSpectral.risk_score)
+    : null;
+
   const multimodalData = computeMultimodalRisk(
     latestRisk !== null ? Number(latestRisk) : null,
-    latestSpectral?.risk_score != null ? Number(latestSpectral.risk_score) : null
+    sanitizedSpectralRisk
   );
 
   return (

@@ -41,12 +41,14 @@ export function computeMultimodalRisk(
     const p = Math.max(0, Math.min(1, photoScore!));
     const s = Math.max(0, Math.min(1, spectralScore!));
 
-    if (s > p) {
-      // Optical absorption/erythema detected deeper anomalies: boost risk proportionally
+    // Optical absorption/erythema only elevates if the spectral risk is actually
+    // clinically meaningful (s >= 0.35) and exceeds the visual surface score.
+    // If both are low/zero, there is strictly zero elevation.
+    if (s > p && s >= 0.35) {
       elevationDelta = Number(((s - p) * 0.35).toFixed(3));
       combined = Math.min(0.99, p + elevationDelta);
     } else {
-      // Photo is higher: optical does NOT lower visual suspicion
+      // Photo is higher, or spectral is within normal baseline: optical does NOT elevate
       combined = p;
       elevationDelta = 0;
     }
