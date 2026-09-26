@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 export interface SpectralChannels {
   f1: number;
   f2: number;
@@ -13,6 +15,9 @@ export interface SpectralChannels {
   nir: number;
 }
 
+// Colors here encode real wavelength/hue, not theme — a violet bar for F1
+// (415nm) is meaningful, unlike arbitrary category colors elsewhere in the
+// app, so these stay as literal hex rather than var(--color-*).
 const CHANNELS_INFO = [
   { key: "f1", label: "F1", nm: "415nm", color: "#6b21a8" }, // Violet
   { key: "f2", label: "F2", nm: "445nm", color: "#3b82f6" }, // Blue
@@ -27,24 +32,43 @@ const CHANNELS_INFO = [
 ] as const;
 
 export function SpectralChart({ channels }: { channels: SpectralChannels }) {
-  // Находим максимальное значение для пропорционального масштабирования
+  // Bars animate in from 0 on mount instead of appearing at full height
+  // immediately — "mounted" flips true one frame after first paint, so the
+  // height transition (already defined via `transition-all`) actually has
+  // something to animate between. Without this the CSS transition never
+  // triggers, since React paints the final height on the very first render.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   const visibleValues = CHANNELS_INFO.filter((c) => c.key !== "clear").map(
     (c) => channels[c.key as keyof SpectralChannels] || 0
   );
   const maxVal = Math.max(...visibleValues, 100);
 
   return (
+    // Deliberately dark, unlike the rest of the light "Healthcare" palette —
+    // same reasoning as /capture staying dark: this reads as a device
+    // readout, not a content card, and the contrast makes the wavelength
+    // colors below actually legible (they'd wash out on a light background).
+    // The accent badge below still pulls from var(--color-primary) rather
+    // than a raw Tailwind blue, so it's tied to the brand even on a dark
+    // surface instead of being a fully disconnected color.
     <div className="rounded-xl bg-slate-900 p-4 text-white shadow-inner">
       <div className="mb-3 flex items-center justify-between">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
           Спектральный профиль (415нм - 910нм)
         </h4>
-        <span className="rounded bg-blue-500/20 px-2 py-0.5 text-[10px] font-medium text-blue-400">
+        <span
+          className="rounded px-2 py-0.5 text-[10px] font-medium"
+          style={{ backgroundColor: "color-mix(in srgb, var(--color-primary) 25%, transparent)", color: "#7dd3e8" }}
+        >
           AS7341 10-Channel
         </span>
       </div>
 
-      {/* Столбчатый график с цветовой кодировкой длин волн */}
       <div className="flex h-32 items-end justify-between gap-1 pt-4 pb-1">
         {CHANNELS_INFO.map((ch) => {
           const val = channels[ch.key as keyof SpectralChannels] || 0;
@@ -52,29 +76,25 @@ export function SpectralChart({ channels }: { channels: SpectralChannels }) {
 
           return (
             <div key={ch.key} className="group relative flex flex-1 flex-col items-center h-full justify-end">
-              {/* Высплывающий тултип при наведении */}
               <div className="absolute -top-7 hidden rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-200 group-hover:block z-10 whitespace-nowrap shadow">
                 {ch.label} ({ch.nm}): {val}
               </div>
 
-              {/* Столбец */}
               <div
-                className="w-full rounded-t transition-all duration-500"
+                className="w-full rounded-t transition-[height] duration-700 ease-out"
                 style={{
-                  height: `${heightPercent}%`,
+                  height: mounted ? `${heightPercent}%` : "0%",
                   backgroundColor: ch.color,
                   boxShadow: `0 0 8px ${ch.color}66`,
                 }}
               />
 
-              {/* Метка длин волн */}
               <span className="mt-1 text-[9px] font-medium text-slate-400">{ch.label}</span>
             </div>
           );
         })}
       </div>
 
-      {/* Легенда под графиком */}
       <div className="mt-2 flex justify-between border-t border-slate-800 pt-2 text-[10px] text-slate-400">
         <span>Фиолетовый (415нм)</span>
         <span>Зелёный (555нм)</span>
