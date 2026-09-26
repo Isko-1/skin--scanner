@@ -17,7 +17,14 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // /auth/callback redirects here with ?error=oauth when exchangeCodeForSession
+  // fails (e.g. a PKCE code-verifier mismatch) — this was previously silent,
+  // so a failed Google sign-in just looked like nothing happened at all.
+  const [error, setError] = useState<string | null>(
+    searchParams.get("error") === "oauth"
+      ? "Не удалось войти через Google. Попробуйте ещё раз — если не поможет, попробуйте в режиме инкогнито или очистите куки сайта."
+      : null
+  );
 
   async function submitGoogle() {
     setGoogleLoading(true);
