@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { DeviceGuideModal } from "@/components/device-guide-modal";
 
 type ReadingType = "lesion" | "reference";
 type BtnState = "idle" | "waiting" | "done" | "timeout";
@@ -103,18 +104,24 @@ export function SpectralButtons({ moleId }: Props) {
   return (
     <div className="panel space-y-4 p-4">
       {/* Header */}
-      <div className="flex items-center gap-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-primary)]/10">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2" aria-hidden="true">
-            <path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4" />
-            <path d="M15 3h6v6" /><path d="M10 14 21 3" />
-          </svg>
-        </span>
-        <div>
-          <p className="text-sm font-semibold text-[var(--color-foreground)]">Спектральный зонд</p>
-          <p className="text-xs text-[var(--color-muted-foreground)]">
-            Нажмите кнопку, затем приложите зонд — данные придут автоматически
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-primary)]/10">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2" aria-hidden="true">
+              <path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4" />
+              <path d="M15 3h6v6" /><path d="M10 14 21 3" />
+            </svg>
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-[var(--color-foreground)]">Спектральный зонд</p>
+            <p className="text-xs text-[var(--color-muted-foreground)]">
+              Нажмите кнопку, затем приложите зонд — данные придут автоматически
+            </p>
+          </div>
+        </div>
+
+        <div className="shrink-0">
+          <DeviceGuideModal />
         </div>
       </div>
 
@@ -167,7 +174,16 @@ export function SpectralButtons({ moleId }: Props) {
       )}
       {(lesion === "timeout" || reference === "timeout") && (
         <Banner color="error" icon="!">
-          Данные не пришли — убедитесь, что зонд подключён к Wi-Fi и направлен верно
+          <span>
+            Данные не пришли — убедитесь, что зонд подключён к Wi-Fi и направлен верно.{" "}
+            <DeviceGuideModal
+              triggerButton={
+                <span className="font-semibold underline cursor-pointer hover:opacity-80">
+                  Инструкция по подключению
+                </span>
+              }
+            />
+          </span>
         </Banner>
       )}
 

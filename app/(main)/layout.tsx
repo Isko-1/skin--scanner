@@ -57,6 +57,12 @@ export default async function MainLayout({ children }: { children: React.ReactNo
                 >
                   Родинки
                 </Link>
+                <Link
+                  href="/device-guide"
+                  className="rounded-md px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-100 hover:text-slate-900"
+                >
+                  Зонд & FAQ
+                </Link>
                 {isDoctor && (
                   <Link
                     href="/dashboard"
