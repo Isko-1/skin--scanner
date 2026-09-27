@@ -64,32 +64,7 @@ export default function DeviceGuidePage() {
     },
   ];
 
-  const ledSignals = [
-    {
-      status: "Горит постоянно (зеленый)",
-      meaning: "Щуп готов к первому замеру (исследование родинки).",
-      action: "Приложите к родинке и нажмите кнопку.",
-      color: "bg-emerald-500",
-    },
-    {
-      status: "Медленное мигание (синий)",
-      meaning: "Первый замер принят. Ожидается контрольный замер соседней здоровой кожи.",
-      action: "Приложите к чистой коже рядом и нажмите кнопку.",
-      color: "bg-sky-500 animate-pulse",
-    },
-    {
-      status: "Быстрое мерцание (желтый)",
-      meaning: "Идет отправка данных на сервер или активен режим первой настройки Wi-Fi.",
-      action: "Подождите 2-3 секунды.",
-      color: "bg-amber-500",
-    },
-    {
-      status: "Удержание кнопки 3 секунды",
-      meaning: "Команда сброса настроек сети.",
-      action: "Сеть сбросится, и зонд снова создаст «SkinProbe-Setup».",
-      color: "bg-rose-500",
-    },
-  ];
+
 
   const faqs = [
     {
@@ -191,44 +166,14 @@ export default function DeviceGuidePage() {
         </div>
       </section>
 
-      {/* LED Diagnostics Section */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-600 text-white text-xs font-bold">
-              2
-            </span>
-            Значение световых сигналов светодиода
-          </h2>
-          <span className="text-xs text-slate-500">Индикаторы щупа</span>
-        </div>
 
-        <div className="panel overflow-hidden border border-slate-200 p-0">
-          <div className="divide-y divide-slate-100">
-            {ledSignals.map((sig, i) => (
-              <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-2 sm:gap-4 hover:bg-slate-50/60 transition">
-                <div className="flex items-center gap-3">
-                  <span className={`h-3.5 w-3.5 rounded-full shrink-0 ${sig.color} shadow-xs`} />
-                  <div>
-                    <p className="text-xs sm:text-sm font-semibold text-slate-900">{sig.status}</p>
-                    <p className="text-xs text-slate-500">{sig.meaning}</p>
-                  </div>
-                </div>
-                <div className="text-xs font-medium text-slate-700 bg-slate-100 sm:bg-transparent rounded-lg px-2.5 py-1 sm:p-0">
-                  {sig.action}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* FAQ Section */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
             <span className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-600 text-white text-xs font-bold">
-              3
+              2
             </span>
             Часто задаваемые вопросы (FAQ)
           </h2>

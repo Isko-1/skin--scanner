@@ -89,6 +89,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
 
+  // Best-effort — the reading having gone through is what matters; don't
+  // fail the whole request over the status-tab update. next_reading_type
+  // comes from the firmware (it knows what it just toggled to — see
+  // pen-probe.ino); fall back to flipping reading_type here if an older
+  // firmware build doesn't send it yet.
+  const nextReadingType =
+    body.next_reading_type === "lesion" || body.next_reading_type === "reference"
+      ? body.next_reading_type
+      : reading_type === "lesion"
+        ? "reference"
+        : "lesion";
+  await db
+    .from("devices")
+    .update({
+      last_seen_at: new Date().toISOString(),
+      last_reading_at: new Date().toISOString(),
+      next_reading_type: nextReadingType,
+    })
+    .eq("id", "pen-probe");
+
   // Found a pending pair — link it back to the reading we just inserted,
   // and if THAT pending row was the 'lesion' side, this is also the moment
   // its risk_score/pattern_match get filled in (it was sitting at null

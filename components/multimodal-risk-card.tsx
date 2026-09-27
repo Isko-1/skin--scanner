@@ -105,7 +105,7 @@ export function MultimodalRiskCard({ data }: Props) {
               {spectralScore !== null ? `${(spectralScore * 100).toFixed(0)}%` : "Нет замера"}
             </span>
             {elevationDelta > 0 && (
-              <span className="text-[10px] font-bold text-rose-600" title="Спектральный контраст выявил подкожную васкуляризацию/пигмент">
+              <span className="text-[10px] font-bold text-rose-600" title="Неоткалиброванная эвристика: контраст по нескольким длинам волн выше типичного, см. lib/spectral.ts">
                 (+{(elevationDelta * 100).toFixed(0)}%)
               </span>
             )}
@@ -118,7 +118,7 @@ export function MultimodalRiskCard({ data }: Props) {
         <div className="rounded-xl bg-amber-100/70 border border-amber-300/80 px-3 py-2 text-xs text-amber-900 flex items-start gap-2">
           <span>⚠️</span>
           <p>
-            <strong>Оптический спектр повысил индекс риска (+{(elevationDelta * 100).toFixed(0)}%):</strong> обнаружен повышенный контраст гемоглобина (540 нм) или меланина (650/950 нм) в глубоких слоях дермы.
+            <strong>Оптический спектр повысил индекс риска (+{(elevationDelta * 100).toFixed(0)}%):</strong> контраст по нескольким длинам волн (540/650/950нм) отличается от типичного — это неоткалиброванная эвристика (см. lib/spectral.ts), а не подтверждённое оптическое измерение глубины залегания.
           </p>
         </div>
       )}

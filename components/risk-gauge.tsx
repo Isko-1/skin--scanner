@@ -10,9 +10,13 @@ export function riskLevel(score: number): { label: string; color: string; level:
  * Circular gauge showing risk_score as a percentage with light clinical color coding.
  */
 export function RiskGauge({ score, size = "size-14 text-xs" }: { score: number; size?: string }) {
-  const { color } = riskLevel(score);
+  const { color, level } = riskLevel(score);
   return (
-    <div className="relative inline-flex items-center justify-center">
+    <div
+      className={`relative inline-flex items-center justify-center rounded-full ${
+        level === "high" ? "animate-risk-pulse" : ""
+      }`}
+    >
       <AnimatedCircularProgressBar
         value={Math.round(score * 100)}
         gaugePrimaryColor={color}

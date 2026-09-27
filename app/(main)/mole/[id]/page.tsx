@@ -9,6 +9,7 @@ import { MoleEvolutionCompare } from "@/components/mole-evolution-compare";
 import { MultimodalRiskCard } from "@/components/multimodal-risk-card";
 import { computeMultimodalRisk } from "@/lib/multimodal-risk";
 import { AbcdeInteractiveChecklist } from "@/components/abcde-interactive-checklist";
+import { BlurFade } from "@/components/ui/blur-fade";
 
 export const dynamic = "force-dynamic";
 
@@ -247,15 +248,15 @@ export default async function MoleHistoryPage({ params }: { params: { id: string
           </div>
         ) : (
           <ul className="space-y-2.5">
-            {analyses.map((a) => {
+            {analyses.map((a, index) => {
               const { label, level } = riskLevel(a.risk_score);
               const thumb = thumbs.get(a.id);
               const sharpness = Math.round(a.sharpness_score ?? 0);
               const isSharp = sharpness >= 60;
 
               return (
+                <BlurFade key={a.id} delay={Math.min(index, 8) * 0.04}>
                 <li
-                  key={a.id}
                   className="panel flex items-center justify-between gap-3 p-3.5"
                 >
                   <div className="flex items-center gap-3 min-w-0">
@@ -321,6 +322,7 @@ export default async function MoleHistoryPage({ params }: { params: { id: string
                     <RiskGauge score={a.risk_score} size="size-12 text-[10px]" />
                   </div>
                 </li>
+                </BlurFade>
               );
             })}
           </ul>

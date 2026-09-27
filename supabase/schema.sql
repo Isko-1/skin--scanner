@@ -71,6 +71,61 @@ create index photo_analyses_risk_idx on photo_analyses (risk_score desc);
 -- what — this only turns the channel on, it doesn't bypass row security.
 alter publication supabase_realtime add table spectral_readings;
 
+-- Single-row status for the physical probe (there's exactly one device for
+-- this project — see PEN_MOLE_ID in firmware/pen-probe/pen-probe.ino).
+-- Powers the "Устройство" tab. Online/offline is derived on the client from
+-- last_seen_at (now() - last_seen_at < 25s) rather than stored as a boolean
+-- — a stored flag would need something to flip it back to false when a
+-- heartbeat simply stops arriving, which nothing here does.
+create table if not exists devices (
+  id text primary key default 'pen-probe',
+  last_seen_at timestamptz,
+  last_reading_at timestamptz,
+  rssi integer,       -- WiFi signal strength (dBm), from WiFi.RSSI() in firmware
+  uptime_ms bigint,   -- millis() since the ESP32 last booted — a drop to a small number between heartbeats means it rebooted (e.g. WiFi drop -> ESP.restart())
+  next_reading_type text default 'lesion' check (next_reading_type in ('lesion', 'reference')) -- what the NEXT button press will send; firmware has no LED to show this itself, see pen-probe.ino
+);
+insert into devices (id) values ('pen-probe') on conflict (id) do nothing;
+
+alter table devices enable row level security;
+-- Read-only for logged-in users; only the service-role client (supabaseAdmin,
+-- used by /api/device/heartbeat and /api/spectral) can write here — no
+-- insert/update/delete policy is intentional, not an oversight.
+create policy "authenticated read devices" on devices for select using (auth.role() = 'authenticated');
+
+alter publication supabase_realtime add table devices;
+
+-- Backs the dynamic pairing that firmware/skin-scanner-device.ino uses when
+-- PEN_MOLE_ID is "auto" (see lib/probe-session.ts): app/api/probe/session
+-- (POST, called when a user opens/starts a scan on a mole's page) writes a
+-- row here; app/api/spectral (via resolveActiveProbeMoleId) reads the most
+-- recent unexpired one to figure out which mole an incoming "auto" reading
+-- belongs to. DB-backed rather than relying on the in-memory globalThis
+-- fallback alone — Vercel serverless functions are ephemeral and can run as
+-- multiple instances, so a process-local variable isn't reliably shared
+-- between the request that sets the session and the request that reads it
+-- back (see the deprecation comment in app/api/active-mole/route.ts, which
+-- hit exactly this). Without this table, lib/probe-session.ts was silently
+-- falling back to globalThis or "the most recently created mole" every time.
+create table if not exists probe_sessions (
+  id uuid primary key default gen_random_uuid(),
+  mole_id uuid not null references moles(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete set null,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+
+-- Powers "find the most recent still-valid session" in resolveActiveProbeMoleId.
+create index if not exists probe_sessions_active_idx on probe_sessions (expires_at desc);
+
+alter table probe_sessions enable row level security;
+-- No policy at all is intentional, not an oversight: only supabaseAdmin
+-- (service-role key, used by lib/probe-session.ts) ever reads or writes
+-- this table — it's an internal device-pairing mechanism, not something a
+-- user's browser session queries directly. RLS enabled with zero policies
+-- means every role except service_role gets zero rows, which is exactly
+-- the "nobody but the server touches this" access this table needs.
+
 -- Row Level Security: a user only sees their own moles and the analyses hanging off them.
 alter table moles enable row level security;
 alter table photo_analyses enable row level security;

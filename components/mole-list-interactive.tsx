@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { RiskGauge, riskLevel } from "@/components/risk-gauge";
 import { NumberTicker } from "@/components/ui/number-ticker";
+import { BlurFade } from "@/components/ui/blur-fade";
 
 export interface MoleWithAnalyses {
   id: string;
@@ -270,7 +271,7 @@ export function MoleListInteractive({ moles, thumbnails }: MoleListInteractivePr
       {/* Mole Cards List */}
       {filteredMoles.length > 0 ? (
         <ul className="space-y-2.5">
-          {filteredMoles.map((mole) => {
+          {filteredMoles.map((mole, index) => {
             const analyses = mole.photo_analyses ?? [];
             const latest = analyses[0];
             const risk = latest ? Number(latest.risk_score) : null;
@@ -278,7 +279,8 @@ export function MoleListInteractive({ moles, thumbnails }: MoleListInteractivePr
             const riskInfo = risk !== null ? riskLevel(risk) : null;
 
             return (
-              <li key={mole.id}>
+              <BlurFade key={mole.id} delay={Math.min(index, 8) * 0.04}>
+                <li>
                 <Link
                   href={`/mole/${mole.id}`}
                   className="panel panel-interactive flex items-center justify-between gap-4 p-3.5 sm:p-4"
@@ -389,7 +391,8 @@ export function MoleListInteractive({ moles, thumbnails }: MoleListInteractivePr
                     </svg>
                   </div>
                 </Link>
-              </li>
+                </li>
+              </BlurFade>
             );
           })}
         </ul>
