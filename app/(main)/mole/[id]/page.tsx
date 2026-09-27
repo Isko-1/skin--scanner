@@ -8,7 +8,7 @@ import { SpectralButtons } from "@/components/spectral-buttons";
 import { MoleEvolutionCompare } from "@/components/mole-evolution-compare";
 import { MultimodalRiskCard } from "@/components/multimodal-risk-card";
 import { computeMultimodalRisk } from "@/lib/multimodal-risk";
-import { AbcdeInteractiveChecklist } from "@/components/abcde-interactive-checklist";
+import { DeviceStatusBadge } from "@/components/device-status-badge";
 import { BlurFade } from "@/components/ui/blur-fade";
 
 export const dynamic = "force-dynamic";
@@ -207,13 +207,9 @@ export default async function MoleHistoryPage({ params }: { params: { id: string
 
       {/* Spectral section */}
       <div className="mb-6 space-y-3">
+        <DeviceStatusBadge />
         <SpectralLive moleId={params.id} />
         <SpectralButtons moleId={params.id} />
-      </div>
-
-      {/* Clinical ABCDE Checklist */}
-      <div className="mb-6">
-        <AbcdeInteractiveChecklist moleId={params.id} />
       </div>
 
       {/* Scan history */}
